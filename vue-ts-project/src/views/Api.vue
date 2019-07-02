@@ -2,20 +2,50 @@
   <div class="">
       <h1>Mina Listor</h1> <br>
       <div v-if="responseIfError !== 'empty'">
-        <div class="ContainerDiv">
-                <div class="listContainer" v-for="obj in responseContainerList1" :key="obj['title']">
+        <select class="select-css" @change="presentlist($event)" name="dropdown" id="dropdown">
+            <option selected hidden value="empty">Välj Lista</option>
+            <option v-for="obj in responseContainerList1" :key="obj['id']" :value="obj">{{obj['title']}}</option>
+        </select>
+      </div>
+      <div v-if="responseIfError !== 'empty' && List_present !== 'empty'">
+          <div v-if="List_present['UserId'] !== 0" class="ContainerDiv">
+                <div class="listContainer">
+                    <font-awesome-icon class="editButton" @click="edit = CompleteListItem(edit)" :icon="['fas', 'edit']" ></font-awesome-icon>
                 <ul>
-                <div class="ListItemDiv"><input type="radio" @click="delete1(obj['id'])" /><th>{{obj['title']}}</th></div>
-                    <li><div class="ListItemDiv" v-for="item in obj['listItem']" :key="item['id']"><input type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed'])" v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li>
+                <div class="ListItemDiv">
+                    <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
+                    <th>{{List_present['title']}}</th>
+                </div>
+                <!-- <div class="ListItemDiv"><input v-show="edit" type="radio" @click="delete1(List_present['id'])" /><th>{{List_present['title']}}</th></div> -->
+                    <li>
+                        <div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']">
+                            <!-- <div class="div1"> -->
+                                <font-awesome-icon class="itemIcon" v-show="edit" @click="deleteItem(item['id'])" :icon="['fas', 'times-circle']"></font-awesome-icon>
+                                <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
+                            <!-- </div> -->
+                            <!-- <div class="div2"> -->
+                                <span @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</span>
+                            <!-- </div> -->
+                        </div>
+                    </li>
+                    <!-- <li><div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']"><input v-show="edit" type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item) " v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li> -->
                 </ul>
                 </div>
         </div>
-        <div class="ContainerDivButton">
+        <!-- <div class="ContainerDiv">
+                <div class="listContainer" v-for="obj in responseContainerList1" :key="obj['title']">
+                <ul>
+                <div class="ListItemDiv"><input type="radio" @click="delete1(obj['id'])" /><th>{{obj['title']}}</th></div>
+                    <li><div class="ListItemDiv" v-for="item in obj['listItem']" :key="item['id']"><input type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item) " v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li>
+                </ul>
+                </div>
+        </div> -->
+        <!-- <div class="ContainerDivButton">
             <button class="buttonBlue" @click="get1()">Hämta listor</button> <br>
             <button class="buttonBlue" @click="saveAttempt()">Spara</button> <br>
-        </div>
+        </div> -->
       </div>
-        <router-link class="buttonBlue" v-else to="/create">Skapa nya listor</router-link>
+        <router-link class="buttonBlue" v-if="responseIfError === 'empty'" to="/create">Skapa nya listor</router-link>
   </div>
 </template>
 
@@ -23,13 +53,22 @@
 import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
 import {List1, ListItem1} from '@/models/types';
+import { library, config } from '@fortawesome/fontawesome-svg-core';
+import { faTimesCircle, faEdit, faCheck} from "@fortawesome/free-solid-svg-icons";
+import { faTrashAlt,faCheckCircle} from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+
+library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck );
+Vue.component('font-awesome-icon', FontAwesomeIcon);
+
 
 @Component
 export default class Api extends Vue {
     mounted() {
         this.get1();
     };
-
+        edit = false;
+        dropdown = "Välj Lista";
         items= "null";
         inputValue= "this is input";
         inputList= 'test';
@@ -42,13 +81,23 @@ export default class Api extends Vue {
         responseIfError = "";
         debug= false;
         linetrough = "line-trough";
+        List_present = new List1;
+        debug2 = "";
 
         CompleteListItem(item: boolean) {
-            console.log("here, also " + item);
-            if(item === false)
+            if(item === false){
+                console.log("if, also " + item);
                 return true;
-            else
-               return false;
+            }
+            else{
+                console.log("else, also " + item);                
+                return false;
+            }
+        };
+
+        presentlist(event: Event){
+                console.log(event.target.selectedOptions[0]._value);
+            this.List_present = event.target.selectedOptions[0]._value;
         };
 
         get1() {
@@ -63,7 +112,7 @@ export default class Api extends Vue {
                 self.items = JSON.stringify(myJson, null, 2);
                 self.responseContainerList1 = myJson;
                 self.$store.state.z_string = myJson;
-                console.log(JSON.stringify(myJson, null, 2));
+                // console.log(JSON.stringify(myJson, null, 2));
             });
         };
 
@@ -77,7 +126,7 @@ export default class Api extends Vue {
             })
             .then(function(myJson) {
                 self.items = myJson;
-                console.log(JSON.stringify(myJson));
+                // console.log(JSON.stringify(myJson));
             });
          };
 
@@ -90,6 +139,14 @@ export default class Api extends Vue {
           fetch('https://localhost:44366/api/values/save/', {
               method: 'POST',
               body: JSON.stringify(self.responseContainerList1),
+              headers: {'Content-Type': 'application/json'}});
+          };
+
+          saveItem(listitem: ListItem1) {
+
+          fetch('https://localhost:44366/api/values/SaveItem/', {
+              method: 'POST',
+              body: JSON.stringify(listitem),
               headers: {'Content-Type': 'application/json'}});
           };
 
@@ -152,7 +209,7 @@ export default class Api extends Vue {
                 }).then(function(response) {
                 return response;
                 }).then(data => {
-                console.log(data);
+                // console.log(data);
                 })
             };
 
@@ -168,7 +225,7 @@ export default class Api extends Vue {
                 }).then(function(response) {
                 return response;
                 }).then(data => {
-                console.log(data);
+                // console.log(data);
                 })
             };
         delete1(id: number) {
@@ -186,8 +243,10 @@ export default class Api extends Vue {
                 return response.json();
                 }).then(function(myJson) {
                 self.items = JSON.stringify(myJson, null, 2);
-                if(self.responseIfError !== "empty") 
+                if(self.responseIfError !== "empty") {
+                    self.List_present['UserId'] = 0;
                     self.responseContainerList1 = myJson;
+                }
                 self.$store.state.z_string = myJson;
             });
             };
@@ -205,10 +264,16 @@ export default class Api extends Vue {
                     return response.json();
             }).then(function(myJson) {
                 self.items = JSON.stringify(myJson, null, 2);
-                if(self.responseIfError !== "empty")
+                if(self.responseIfError !== "empty"){
+                    
+                    for (let index = 0; index < self.List_present['listItem'].length; index++) {
+                        if(self.List_present['listItem'][index]['id'] === id)
+                            self.List_present['listItem'].splice(index, 1);  
+                    };
                     self.responseContainerList1 = myJson;
+                }
                 self.$store.state.z_string = myJson;
-                console.log(JSON.stringify(myJson, null, 2));
+                // console.log(JSON.stringify(myJson, null, 2));
             });
         };
 
@@ -216,19 +281,20 @@ export default class Api extends Vue {
 </script>
 
 <style scoped>
+/* .div1 {
+display: block;
+text-align: center;
+}
+.div2{
+display: block;
+} */
 .listContainer {
     display: inline;
-    max-width: 200px;
     min-width: 100px;
+    max-width: 800px;
     text-align: left;
-    border: 2px solid orange;
-}
-.listContainer button {
-    display: inline;
-    background-color: red;
 }
 .listContainer ul {
-    font-size: 2em;
     min-width: 150px;
     justify-content: space-around;
 }
@@ -236,10 +302,17 @@ export default class Api extends Vue {
     padding: 4px;
     list-style-type: none;
 }
-.ListItemDiv p {
+.ListItemDiv th {
     display: inline;
 }
-.ListItemDiv th {
+.ListItemDiv {
+    display: block;
+    line-height: 20px;
+}
+.ListItemDiv span {
+    position: inline;
+}
+font-awesome-icon {
     display: inline;
 }
 .line-trough{
@@ -249,47 +322,87 @@ export default class Api extends Vue {
     border: 2px solid #3bb273;
     display: flex;
     justify-content: space-around;
-    margin: 40px;    
+    margin: 40px;
+    min-width: 500px;
+    max-width: 80%;
 }
-.buttonBlue {
-    background-color: #3bb273; /* Green */
-    border: none;
-    color: white;
-    padding: 15px 32px;
-    text-align: center;
-    text-decoration: none;
-    display: inline-block;
+
+.select-css {
+    display: block;
     font-size: 16px;
-    margin: 4px;
-    margin-left: 12px;
-    }
-.ContainerDivButton {
-    display: flex;
-    justify-content: space-around;
-    margin-left: 40%;
-    width: 20%;
-    height: 70px;
-    text-align: center;
-
-}
-.buttonsToBeSorted {
-    margin-top: 400px;
-    max-width: 500px;
-}
-
-ul li .check{
-  display: block;
-  position: absolute;
-  border: 5px solid #AAAAAA;
-  border-radius: 100%;
-  height: 25px;
-  width: 25px;
-  top: 30px;
-  left: 20px;
-	z-index: 5;
-	transition: border .25s linear;
-	-webkit-transition: border .25s linear;
+    font-family: sans-serif;
+    font-weight: 700;
+    color: #444;
+    line-height: 1.3;
+    padding: .6em 1.4em .5em .8em;
+    width: 100%;
+    max-width: 30%; 
+    box-sizing: border-box;
+    margin-left: 35%;
+    border: 1px solid #aaa;
+    box-shadow: 0 1px 0 1px rgba(0,0,0,.04);
+    border-radius: .5em;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: #fff;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E'),
+      linear-gradient(to bottom, #ffffff 0%,#e5e5e5 100%);
+    background-repeat: no-repeat, repeat;
+    background-position: right .7em top 50%, 0 0;
+    background-size: .65em auto, 100%;
 }
 
+.select-css:hover {
+    border-color: #888;
+}
+.select-css:focus {
+    border-color: #aaa;
+    box-shadow: 0 0 0 3px -moz-mac-focusring;
+    color: #222; 
+    outline: none;
+}
+.select-css option {
+    font-weight: normal;
+}
+
+body {
+  padding: 3rem;
+}
+.titleIcon{
+    font-size: 18px;
+    padding-right: 8px;
+}
+.itemIcon {
+    font-size: 15px;
+    padding-right: 8px;
+}
+.editButton {
+    font-size: 25px;
+    padding: 5px;
+}
+.editButton:hover {
+    color: #3bb273;
+}
+.completedIcon:hover {
+    color: #3bb273;
+}
+.completedIcon {
+    border: #3bb273 solid 1px;
+    border-radius: 50%;
+    font-size: 15px;
+    margin-right:5px;
+    padding: 5px;
+}
+.competedIconDone {
+    border: #3bb273 solid 1px;
+    background-color: #3bb273;
+    border-radius: 50%;
+    padding: 5px;
+    color: white;
+}
+.listItemContainer {
+    margin: 12px;
+}
 </style>
 
