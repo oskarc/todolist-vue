@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">.</router-link> |
+      <router-link to="/">home</router-link> |
       <router-link to="/api">Mina Listor</router-link> |
       <router-link to="/create">Skapa Lista</router-link> |
       <router-link to="/">.</router-link> 

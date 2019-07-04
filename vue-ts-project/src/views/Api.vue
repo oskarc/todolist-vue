@@ -9,8 +9,8 @@
       </div>
       <div v-if="responseIfError !== 'empty' && List_present !== 'empty'">
           <div v-if="List_present['UserId'] !== 0" class="ContainerDiv">
-                <div class="listContainer">
-                    <font-awesome-icon class="editButton" @click="edit = CompleteListItem(edit)" :icon="['fas', 'edit']" ></font-awesome-icon>
+            <div class="listContainer">
+                <font-awesome-icon class="editButton" @click="edit = CompleteListItem(edit)" :icon="['fas', 'edit']" ></font-awesome-icon>
                 <ul>
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
@@ -19,18 +19,18 @@
                 <!-- <div class="ListItemDiv"><input v-show="edit" type="radio" @click="delete1(List_present['id'])" /><th>{{List_present['title']}}</th></div> -->
                     <li>
                         <div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']">
-                            <!-- <div class="div1"> -->
+                            <div class="div1">
                                 <font-awesome-icon class="itemIcon" v-show="edit" @click="deleteItem(item['id'])" :icon="['fas', 'times-circle']"></font-awesome-icon>
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
-                            <!-- </div> -->
-                            <!-- <div class="div2"> -->
-                                <span @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</span>
-                            <!-- </div> -->
+                            </div>
+                            <div class="div2">
+                                <p @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p>
+                            </div>
                         </div>
                     </li>
                     <!-- <li><div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']"><input v-show="edit" type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item) " v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li> -->
                 </ul>
-                </div>
+            </div>
         </div>
         <!-- <div class="ContainerDiv">
                 <div class="listContainer" v-for="obj in responseContainerList1" :key="obj['title']">
@@ -281,15 +281,19 @@ export default class Api extends Vue {
 </script>
 
 <style scoped>
-/* .div1 {
-display: block;
-text-align: center;
+.div1 {
+    float: left;
 }
 .div2{
-display: block;
-} */
+    margin: 25px;
+    word-wrap: break-word;
+}
+.div2 p {
+    margin-left: 25px;
+}
+
 .listContainer {
-    display: inline;
+    padding: 10px;
     min-width: 100px;
     max-width: 800px;
     text-align: left;
@@ -304,24 +308,22 @@ display: block;
 }
 .ListItemDiv th {
     display: inline;
+    font-size: 1.5em;
 }
 .ListItemDiv {
-    display: block;
     line-height: 20px;
+}
+.ListItemDiv p {
+    padding-left: 20px;
 }
 .ListItemDiv span {
     position: inline;
-}
-font-awesome-icon {
-    display: inline;
 }
 .line-trough{
     text-decoration: line-through;
 }
 .ContainerDiv{
     border: 2px solid #3bb273;
-    display: flex;
-    justify-content: space-around;
     margin: 40px;
     min-width: 500px;
     max-width: 80%;
@@ -376,6 +378,13 @@ body {
 .itemIcon {
     font-size: 15px;
     padding-right: 8px;
+}
+.itemIcon:hover {
+    color:red;
+    font-size: 1.1em;
+}
+.titleIcon:hover {
+    color:red;
 }
 .editButton {
     font-size: 25px;
