@@ -1,10 +1,12 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">home</router-link> |
-      <router-link to="/api">Mina Listor</router-link> |
-      <router-link to="/create">Skapa Lista</router-link> |
-      <router-link to="/">.</router-link> 
+     <p>
+        <router-link to="/">Home</router-link> |  
+        <router-link to="/api">Mina Listor</router-link> |
+        <router-link to="/create">Skapa Lista</router-link> |
+        <router-link to="/">.</router-link> 
+     </p> 
     </div>
     <img alt="Vue logo" src="../src/assets/logo.png">    
     <router-view/>
@@ -31,4 +33,8 @@
 #nav a.router-link-exact-active {
   color: #42b983;
 }
+#nav p {
+  font-size: 1.5em;
+}
 </style>
+

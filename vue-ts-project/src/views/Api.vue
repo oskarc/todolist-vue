@@ -2,7 +2,8 @@
   <div class="">
       <h1>Mina Listor</h1> <br>
       <div v-if="responseIfError !== 'empty'">
-        <select class="select-css" @change="presentlist($event)" name="dropdown" id="dropdown">
+          <button @click="rerender()">Rerender list</button>
+        <select class="select-css" @change="presentlist($event.target.selectedOptions[0]._value)" name="dropdown" id="dropdown">
             <option selected hidden value="empty">Välj Lista</option>
             <option v-for="obj in responseContainerList1" :key="obj['id']" :value="obj">{{obj['title']}}</option>
         </select>
@@ -16,7 +17,6 @@
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
                     <th>{{List_present['title']}}</th>
                 </div>
-                <!-- <div class="ListItemDiv"><input v-show="edit" type="radio" @click="delete1(List_present['id'])" /><th>{{List_present['title']}}</th></div> -->
                     <li>
                         <div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']">
                             <div class="div1">
@@ -24,26 +24,14 @@
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
                             </div>
                             <div class="div2">
-                                <p @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p>
+                                <p @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'completed': item['completed']}">{{item['listItemText']}}</p>
                             </div>
                         </div>
+                    <input v-show="edit" @keypress.enter="AddItem($event.target.value)" class="addItem" placeholder="Skriv syssla eller sak"/>
                     </li>
-                    <!-- <li><div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']"><input v-show="edit" type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item) " v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li> -->
                 </ul>
             </div>
         </div>
-        <!-- <div class="ContainerDiv">
-                <div class="listContainer" v-for="obj in responseContainerList1" :key="obj['title']">
-                <ul>
-                <div class="ListItemDiv"><input type="radio" @click="delete1(obj['id'])" /><th>{{obj['title']}}</th></div>
-                    <li><div class="ListItemDiv" v-for="item in obj['listItem']" :key="item['id']"><input type="radio" @click="deleteItem(item['id'])" /><p  @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item) " v-bind:class="{ 'line-trough': item['completed']}">{{item['listItemText']}}</p></div></li>
-                </ul>
-                </div>
-        </div> -->
-        <!-- <div class="ContainerDivButton">
-            <button class="buttonBlue" @click="get1()">Hämta listor</button> <br>
-            <button class="buttonBlue" @click="saveAttempt()">Spara</button> <br>
-        </div> -->
       </div>
         <router-link class="buttonBlue" v-if="responseIfError === 'empty'" to="/create">Skapa nya listor</router-link>
   </div>
@@ -66,13 +54,24 @@ Vue.component('font-awesome-icon', FontAwesomeIcon);
 export default class Api extends Vue {
     mounted() {
         this.get1();
+        console.log("mounted!!");
     };
+    updated() {
+      if(this.update === 1) {
+        console.log("updated!");
+        this.get1();
+        console.log("updated, update: " + this.update)
+        this.update = 0;
+      }
+   
+    };
+        firstrun = 1;
+        update = 0;
         edit = false;
         dropdown = "Välj Lista";
         items= "null";
         inputValue= "this is input";
         inputList= 'test';
-        list= this.$store.state.z_string;
         input1= "";
         input2= "";
         userid= 0;
@@ -80,9 +79,10 @@ export default class Api extends Vue {
         responseContainerList1 = new List1;
         responseIfError = "";
         debug= false;
-        linetrough = "line-trough";
         List_present = new List1;
         debug2 = "";
+        selectedlist = "";
+        event = "";
 
         CompleteListItem(item: boolean) {
             if(item === false){
@@ -95,9 +95,17 @@ export default class Api extends Vue {
             }
         };
 
-        presentlist(event: Event){
-                console.log(event.target.selectedOptions[0]._value);
-            this.List_present = event.target.selectedOptions[0]._value;
+        rerender() {
+         this.update = 1;
+        console.log("rerender, update: " + this.update)
+        };
+
+        presentlist(event: any){
+            this.userid = event.userId;
+            this.listid = event.listId;
+            this.selectedlist = event;
+                console.log(event);
+            this.List_present = event;
         };
 
         get1() {
@@ -109,10 +117,33 @@ export default class Api extends Vue {
             return response.json();
             })
             .then(function(myJson) {
+                // console.log("get1 log:::::: " + JSON.stringify(myJson, null, 2));
+                // console.log("GET1 = selectedOptions:::: " + JSON.stringify(self.selectedlist, null, 2));
+                var newList: any;
+                myJson.forEach(element => {
+                    if(element.id === self.List_present.id)
+                        newList = element;
+                    console.log(element);
+                });
+                console.log("newlist " + JSON.stringify(newList));
                 self.items = JSON.stringify(myJson, null, 2);
                 self.responseContainerList1 = myJson;
                 self.$store.state.z_string = myJson;
-                // console.log(JSON.stringify(myJson, null, 2));
+                console.log("before firstrun: " + self.firstrun)
+                console.log("get before condition, update: " + self.update)
+                if(self.firstrun === 0){
+                    console.log("updates!!!");
+                    console.log("PUSH!!!")
+                    self.List_present = newList;
+                    self.List_present.listItem.sort();
+                    console.log("responselist_:::::::::::::::::::" + self.responseContainerList1);
+                    self.responseContainerList1 = self.responseContainerList1;
+                    self.update = 0;
+                    console.log("last row inside loop, update: " + self.update)
+                }
+                self.firstrun = 0;
+                console.log("after firstrun: " + self.firstrun)
+                console.log("after loop, update: " + self.update)
             });
         };
 
@@ -150,6 +181,22 @@ export default class Api extends Vue {
               headers: {'Content-Type': 'application/json'}});
           };
 
+          AddItem(ListItemText: string) {
+              var self = this;
+              self.event = ListItemText;
+              var bodyContent = {ListId: self.listid, UserId: self.userid, ListItemText: ListItemText};
+          fetch('https://localhost:44366/api/values/AddItem/', {
+              method: 'POST',
+              body: JSON.stringify(bodyContent),
+              headers: {'Content-Type': 'application/json'}
+              });
+              self.update = 1;
+            //   console.log("before:::: " + JSON.stringify(self.List_present));
+              self.List_present['listItem'].sort();
+            //   console.log("after::::::" + JSON.stringify(self.List_present));
+            //   console.log("ADDITEM = selectedOptions:::: " + JSON.stringify(self.selectedlist, null, 2));
+          };
+
         getAttempt() {
 
                 var self = this;
@@ -163,8 +210,14 @@ export default class Api extends Vue {
                     return response.json();
                     }).then(function(myJson) {
                         self.items = myJson;
-                        console.log(JSON.stringify(myJson));
+                        console.log("myJson: " + JSON.stringify(myJson));
                     });
+                    var items = JSON.stringify("self.items: " + self.items);
+                    var list = new List1;
+                    console.log(self.items);
+                    console.log(items);
+
+                    return self.items;
             };
 
         postAttempt2() {
@@ -273,7 +326,6 @@ export default class Api extends Vue {
                     self.responseContainerList1 = myJson;
                 }
                 self.$store.state.z_string = myJson;
-                // console.log(JSON.stringify(myJson, null, 2));
             });
         };
 
@@ -319,7 +371,7 @@ export default class Api extends Vue {
 .ListItemDiv span {
     position: inline;
 }
-.line-trough{
+.completed{
     text-decoration: line-through;
 }
 .ContainerDiv{
@@ -412,6 +464,12 @@ body {
 }
 .listItemContainer {
     margin: 12px;
+}
+.addItem {
+    min-width: 80%;
+    word-wrap: break-word;
+    display: inline;
+    margin-left: 15%;
 }
 </style>
 

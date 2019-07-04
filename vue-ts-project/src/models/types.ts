@@ -3,7 +3,7 @@ export class List1 {
     UserId= 0;
     ListId= 0;
     Title= "";
-    List= Array<ListItem1>();
+    listItem= Array<ListItem1>();
     id = 0;
 };
 

@@ -24,7 +24,6 @@
         <p class="errorText">{{errorText}}</p>
         <p class="successText">{{successText}}</p>
     </div>
-
     <div v-for="obj in listList2" :key="obj['title']">
         <ul>
         <th>{{obj['title']}}</th>
@@ -44,7 +43,7 @@ import Api from './Api.vue';
 export default class Create extends Vue {
     title = "";
     items= Array<string>();
-    listItem = new ListItem1;
+    ListItem = new ListItem1;
 
     listItems2= new List1;
     listList2= new Array<Array<List1>>();
@@ -99,12 +98,12 @@ export default class Create extends Vue {
             this.listItems2.UserId = this.userid;    
             this.listItems2.ListId = this.listid;
             this.listItems2.Title = this.title;
-            this.listItems2.List = new Array<ListItem1>();
+            this.listItems2.listItem = new Array<ListItem1>();
 
             if(this.items.length === 0)
                 return this.errorText = "Lägg till fler saker"
             for (var i = 0, len = this.items.length; i < len; i++) {
-             this.listItems2.List.push(this.populareListItem((<HTMLInputElement>document.getElementById(this.items[i])).value, false))
+             this.listItems2.listItem.push(this.populareListItem((<HTMLInputElement>document.getElementById(this.items[i])).value, false))
             }
 
             this.$store.state.z_arraystr = this.listList2;
