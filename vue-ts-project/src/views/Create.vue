@@ -2,17 +2,6 @@
   <div class="create-list-container">
     <h1>Skapa Lista</h1>
     <hr>
-    <!-- <div class="ContainerDivButton">
-        <div>
-            <p id="inputHeading">Ange användar-Id</p> <br>
-            <input id="userid" type="text" v-model="userid" class="list-input" placeholder="Userid"/> <br>
-        </div>
-        <div>
-            <p id="inputHeading">Ange List-Id</p> <br>
-            <input id="listid" type="text" v-model="listid" class="list-input" placeholder="ListId"/> <br>
-        </div>
-    </div> -->
-
     <input id="title" type="text" v-model="title" class="list-title-input" placeholder="Titel"/> <button @click="createInput()">+</button>
     <div v-for="(item) in items" :id="setDivName(item)" :key="item">
         <input :id="item" class="list-item-input" placeholder="Skriv syssla eller sak"/>
@@ -34,35 +23,34 @@
 </template>
 
 <script lang="ts">
+
 import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
 import {List1, ListItem1} from '@/models/types';
-import Api from './Api.vue';
 
 @Component
 export default class Create extends Vue {
     title = "";
-    items= Array<string>();
+    items = new Array<string>();
     ListItem = new ListItem1;
-
-    listItems2= new List1;
-    listList2= new Array<Array<List1>>();
-
-    iterator= 0;
+    listItems2 = new List1;
+    listList2 = new Array<Array<List1>>();
+    iterator = 0;
     debug= "";
     removedItems= Array<string>();
-    userid= 1;
-    listid= 1;
-    inputTemplate= "";
+    userid = 1;
+    listid = 1;
+    inputTemplate = "";
     errorText = "";
-    successText= "";
+    successText = "";
      
-        createInput () {
+        createInput() {
+            console.log(this.$data)
             var input = "input" + this.iterator;
             this.items.push(input);
             this.iterator++;
         };
-        resetTitle () {
+        resetTitle() {
             var input = (<HTMLInputElement>document.getElementById("title")).value;
             return input = "";
         };
@@ -100,14 +88,12 @@ export default class Create extends Vue {
             this.listItems2.Title = this.title;
             this.listItems2.listItem = new Array<ListItem1>();
 
-            if(this.items.length === 0)
+            if(this.items.length === 0){
                 return this.errorText = "Lägg till fler saker"
+            }
             for (var i = 0, len = this.items.length; i < len; i++) {
              this.listItems2.listItem.push(this.populareListItem((<HTMLInputElement>document.getElementById(this.items[i])).value, false))
             }
-
-            this.$store.state.z_arraystr = this.listList2;
-            this.$store.state.z_arrayarray = this.listItems2;
             this.postAttempt();
             return "returned";
         }
@@ -116,11 +102,11 @@ export default class Create extends Vue {
 
             var self = this;
             console.log(self.listItems2);
-
           fetch('https://localhost:44366/api/values/', {
               method: 'POST',
               body: JSON.stringify(self.listItems2),
               headers: {'Content-Type': 'application/json'}});
+
               this.resetForm();
               this.successText = "lista Sparad"
           };

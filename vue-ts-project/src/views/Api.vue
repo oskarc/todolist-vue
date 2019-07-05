@@ -2,7 +2,6 @@
   <div class="">
       <h1>Mina Listor</h1> <br>
       <div v-if="responseIfError !== 'empty'">
-          <button @click="rerender()">Rerender list</button>
         <select class="select-css" @change="presentlist($event.target.selectedOptions[0]._value)" name="dropdown" id="dropdown">
             <option selected hidden value="empty">Välj Lista</option>
             <option v-for="obj in responseContainerList1" :key="obj['id']" :value="obj">{{obj['title']}}</option>
@@ -15,10 +14,10 @@
                 <ul>
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
-                    <th>{{List_present['title']}} | 
-                        <a @click="sortList()">Sort </a>
-                        <font-awesome-icon v-show="sort === 2" :icon="['fas', 'arrow-down']"></font-awesome-icon>
-                        <font-awesome-icon v-show="sort === 1" :icon="['fas', 'arrow-up']"></font-awesome-icon>
+                    <th>{{List_present['title']}} 
+                        <a @click="sortList()">Sort</a>
+                        <font-awesome-icon class="arrowIcon" v-show="sort === 2" :icon="['fas', 'arrow-down']"></font-awesome-icon>
+                        <font-awesome-icon class="arrowIcon" v-show="sort === 1" :icon="['fas', 'arrow-up']"></font-awesome-icon>
                     </th>
                 </div>
                     <li>
@@ -28,8 +27,8 @@
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
                             </div>
                             <div class="div2">
-                                <p @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'completed': item['completed']}">{{item['listItemText']}}</p>
-                                <p class="dateString">{{item['created']}}</p>
+                                <p class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'completed': item['completed']}">{{item['listItemText']}}</p>
+                                <p class="dateString">{{item['created'].replace('T', ' ')}}</p>
                             </div>
                         </div>
                     <input v-show="edit" @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
@@ -80,7 +79,7 @@ export default class Api extends Vue {
         debug2 = "";
         selectedlist = "";
         event = "";
-        sort = 0
+        sort = 1;
 
         CompleteListItem(item: boolean) {
             if(item === false){
@@ -91,11 +90,6 @@ export default class Api extends Vue {
                 console.log("else, also " + item);                
                 return false;
             }
-        };
-
-        rerender() {
-         this.update = 1;
-        console.log("rerender, update: " + this.update)
         };
 
         sortList() {
@@ -121,7 +115,7 @@ export default class Api extends Vue {
                     return 0;
                 });
             }
-            if(this.sort === 2 || this.sort === 0)
+            if(this.sort === 2)
                 this.sort = 1;
             else
                 this.sort = 2;
@@ -147,6 +141,7 @@ export default class Api extends Vue {
                 // console.log("get1 log:::::: " + JSON.stringify(myJson, null, 2));
                 // console.log("GET1 = selectedOptions:::: " + JSON.stringify(self.selectedlist, null, 2));
                 var newList: any;
+                // @ts-ignore
                 myJson.forEach(element => {
                     if(element.id === self.List_present.id)
                         newList = element;
@@ -344,16 +339,17 @@ export default class Api extends Vue {
                 else
                     return response.json();
             }).then(function(myJson) {
-                self.items = JSON.stringify(myJson, null, 2);
-                if(self.responseIfError !== "empty"){
+                // self.items = JSON.stringify(myJson, null, 2);
+                // if(self.responseIfError !== "empty"){
                     
-                    for (let index = 0; index < self.List_present['listItem'].length; index++) {
-                        if(self.List_present['listItem'][index]['id'] === id)
-                            self.List_present['listItem'].splice(index, 1);  
-                    };
-                    self.responseContainerList1 = myJson;
-                }
-                self.$store.state.z_string = myJson;
+                //     for (let index = 0; index < self.List_present['listItem'].length; index++) {
+                //         if(self.List_present['listItem'][index]['id'] === id)
+                //             self.List_present['listItem'].splice(index, 1);  
+                //     };
+                //     self.responseContainerList1 = myJson;
+                // }
+                // self.$store.state.z_string = myJson;
+                self.get1();
             });
         };
 
@@ -370,6 +366,7 @@ export default class Api extends Vue {
 }
 .div2 p {
     margin-left: 25px;
+    margin-bottom: 0;
 }
 
 .listContainer {
@@ -390,10 +387,14 @@ export default class Api extends Vue {
     display: inline;
     font-size: 1.5em;
 }
+.ListItemDiv th a {
+    margin-left: 55%;
+    margin-right: 2%;
+}
 .ListItemDiv {
     line-height: 20px;
 }
-.ListItemDiv p {
+.listItem {
     padding-left: 20px;
 }
 .ListItemDiv span {
@@ -501,6 +502,11 @@ body {
 }
 .dateString {
     color: #376ccd;
+    font-size: 0.8em;
+    margin-top: 2px;
+    padding-left: 40px;
+}
+.arrowIcon {
     font-size: 0.8em;
 }
 </style>
