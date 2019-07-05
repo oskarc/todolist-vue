@@ -11,4 +11,5 @@ export class ListItem1 {
     Completed= false;
     ListItemText= "";
     id = 0;
+    Created = new datetime;
 }

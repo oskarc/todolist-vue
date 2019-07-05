@@ -15,7 +15,11 @@
                 <ul>
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
-                    <th>{{List_present['title']}}</th>
+                    <th>{{List_present['title']}} | 
+                        <a @click="sortList()">Sort </a>
+                        <font-awesome-icon v-show="sort === 2" :icon="['fas', 'arrow-down']"></font-awesome-icon>
+                        <font-awesome-icon v-show="sort === 1" :icon="['fas', 'arrow-up']"></font-awesome-icon>
+                    </th>
                 </div>
                     <li>
                         <div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']">
@@ -25,9 +29,10 @@
                             </div>
                             <div class="div2">
                                 <p @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'completed': item['completed']}">{{item['listItemText']}}</p>
+                                <p class="dateString">{{item['created']}}</p>
                             </div>
                         </div>
-                    <input v-show="edit" @keypress.enter="AddItem($event.target.value)" class="addItem" placeholder="Skriv syssla eller sak"/>
+                    <input v-show="edit" @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
                     </li>
                 </ul>
             </div>
@@ -42,11 +47,11 @@ import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
 import {List1, ListItem1} from '@/models/types';
 import { library, config } from '@fortawesome/fontawesome-svg-core';
-import { faTimesCircle, faEdit, faCheck} from "@fortawesome/free-solid-svg-icons";
+import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown} from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt,faCheckCircle} from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck );
+library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck, faArrowUp, faArrowDown );
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 
@@ -56,15 +61,7 @@ export default class Api extends Vue {
         this.get1();
         console.log("mounted!!");
     };
-    updated() {
-      if(this.update === 1) {
-        console.log("updated!");
-        this.get1();
-        console.log("updated, update: " + this.update)
-        this.update = 0;
-      }
-   
-    };
+
         firstrun = 1;
         update = 0;
         edit = false;
@@ -83,6 +80,7 @@ export default class Api extends Vue {
         debug2 = "";
         selectedlist = "";
         event = "";
+        sort = 0
 
         CompleteListItem(item: boolean) {
             if(item === false){
@@ -100,11 +98,40 @@ export default class Api extends Vue {
         console.log("rerender, update: " + this.update)
         };
 
+        sortList() {
+            console.log(this.sort)
+            if(this.sort === 1){
+                this.List_present.listItem.sort(function(a, b) {
+                    if (Date.parse(a.created) > Date.parse(b.created)) 
+                    return 1;
+                    if (Date.parse(a.created) < Date.parse(b.created)) 
+                    return -1;
+    
+                    return 0;
+                });
+            }
+
+            if(this.sort === 2) {
+                this.List_present.listItem.sort(function(a, b) {
+                    if ( Date.parse(a.created) > Date.parse(b.created)) 
+                    return -1;
+                    if (Date.parse(a.created) < Date.parse(b.created)) 
+                    return 1;
+                    
+                    return 0;
+                });
+            }
+            if(this.sort === 2 || this.sort === 0)
+                this.sort = 1;
+            else
+                this.sort = 2;
+        };
+        
         presentlist(event: any){
             this.userid = event.userId;
             this.listid = event.listId;
             this.selectedlist = event;
-                console.log(event);
+            console.log(event);
             this.List_present = event;
         };
 
@@ -139,7 +166,8 @@ export default class Api extends Vue {
                     console.log("responselist_:::::::::::::::::::" + self.responseContainerList1);
                     self.responseContainerList1 = self.responseContainerList1;
                     self.update = 0;
-                    console.log("last row inside loop, update: " + self.update)
+                    console.log("last row inside loop, update: " + self.update);
+                    console.log("last row, list_present: " + JSON.stringify(self.List_present));
                 }
                 self.firstrun = 0;
                 console.log("after firstrun: " + self.firstrun)
@@ -182,19 +210,19 @@ export default class Api extends Vue {
           };
 
           AddItem(ListItemText: string) {
-              var self = this;
-              self.event = ListItemText;
-              var bodyContent = {ListId: self.listid, UserId: self.userid, ListItemText: ListItemText};
-          fetch('https://localhost:44366/api/values/AddItem/', {
-              method: 'POST',
-              body: JSON.stringify(bodyContent),
-              headers: {'Content-Type': 'application/json'}
-              });
-              self.update = 1;
-            //   console.log("before:::: " + JSON.stringify(self.List_present));
-              self.List_present['listItem'].sort();
-            //   console.log("after::::::" + JSON.stringify(self.List_present));
-            //   console.log("ADDITEM = selectedOptions:::: " + JSON.stringify(self.selectedlist, null, 2));
+                    var self = this;
+                    self.event = ListItemText;
+                    var bodyContent = {ListId: self.listid, UserId: self.userid, ListItemText: ListItemText};
+                fetch('https://localhost:44366/api/values/AddItem/', {
+                    method: 'POST',
+                    body: JSON.stringify(bodyContent),
+                    headers: {'Content-Type': 'application/json'}
+                    }).then(function(){   
+                        self.firstrun = 0;
+                        console.log("then")
+                        self.get1();
+                    });
+                    console.log("after then")
           };
 
         getAttempt() {
@@ -470,6 +498,10 @@ body {
     word-wrap: break-word;
     display: inline;
     margin-left: 15%;
+}
+.dateString {
+    color: #376ccd;
+    font-size: 0.8em;
 }
 </style>
 
