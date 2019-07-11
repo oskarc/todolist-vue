@@ -1,17 +1,32 @@
 <template>
   <div id="app">
     <div id="nav">
-     <p>
-        <router-link to="/">Home</router-link> |  
-        <router-link to="/api">Mina Listor</router-link> |
-        <router-link to="/create">Skapa Lista</router-link> |
-        <router-link to="/">.</router-link> 
-     </p> 
+      <!-- <p>debug: {{$store.state.isLoggedIn}}</p> -->
+     <span>
+        <!-- <router-link to="/">Home</router-link> | -->
+        <span v-show="$store.state.isLoggedIn" ><router-link to="/api">Mina Listor</router-link> | </span>
+        <span v-show="$store.state.isLoggedIn"><router-link to="/create">Skapa Lista</router-link> | </span>
+        <span v-show="!$store.state.isLoggedIn"><router-link to="/register">Registrera</router-link> | </span>
+        <span><router-link to="/login">{{$store.state.Login}}</router-link></span>
+        <!-- <router-link to="/">.</router-link>  -->
+     </span> 
     </div>
     <img alt="Vue logo" src="../src/assets/logo.png">    
     <router-view/>
   </div>
 </template>
+
+<script lang="ts">
+import Vue from 'vue'
+import store from '@/store'
+export default Vue.extend({
+  data() {
+    return {
+      debug: store.state.isLoggedIn,
+    }
+  }
+})
+</script>
 
 <style>
 #app {

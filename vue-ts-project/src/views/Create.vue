@@ -2,6 +2,8 @@
   <div class="create-list-container">
     <h1>Skapa Lista</h1>
     <hr>
+    <!-- <p>user: {{$store.state.user}}</p>
+    <p>{{$store.state.list}}</p> -->
     <input id="title" type="text" v-model="title" class="list-title-input" placeholder="Titel"/> <button @click="createInput()">+</button>
     <div v-for="(item) in items" :id="setDivName(item)" :key="item">
         <input :id="item" class="list-item-input" placeholder="Skriv syssla eller sak"/>
@@ -44,6 +46,10 @@ export default class Create extends Vue {
     errorText = "";
     successText = "";
      
+     created() {
+    //    this.$store.state.user = JSON.parse(sessionStorage.getItem('user'));
+    //    sessionStorage.removeItem('user');  
+     };
         createInput() {
             console.log(this.$data)
             var input = "input" + this.iterator;
@@ -83,7 +89,7 @@ export default class Create extends Vue {
         }
         populateList() {
 
-            this.listItems2.UserId = this.userid;    
+            this.listItems2.UserId = this.$store.state.user['Id'];
             this.listItems2.ListId = this.listid;
             this.listItems2.Title = this.title;
             this.listItems2.listItem = new Array<ListItem1>();

@@ -131,15 +131,14 @@ export default class Api extends Vue {
 
         get1() {
           var self = this;
-          fetch('https://localhost:44366/api/values/')
+          console.log(self.$store.state.user)
+          fetch('https://localhost:44366/api/values/new/' + self.$store.state.user['Id'])
             .then(function(response) {
                 if(response.status !== 200)
                     return self.responseIfError = "empty"
             return response.json();
             })
             .then(function(myJson) {
-                // console.log("get1 log:::::: " + JSON.stringify(myJson, null, 2));
-                // console.log("GET1 = selectedOptions:::: " + JSON.stringify(self.selectedlist, null, 2));
                 var newList: any;
                 // @ts-ignore
                 myJson.forEach(element => {
@@ -147,28 +146,47 @@ export default class Api extends Vue {
                         newList = element;
                     console.log(element);
                 });
-                console.log("newlist " + JSON.stringify(newList));
                 self.items = JSON.stringify(myJson, null, 2);
                 self.responseContainerList1 = myJson;
                 self.$store.state.z_string = myJson;
-                console.log("before firstrun: " + self.firstrun)
-                console.log("get before condition, update: " + self.update)
                 if(self.firstrun === 0){
-                    console.log("updates!!!");
-                    console.log("PUSH!!!")
                     self.List_present = newList;
                     self.List_present.listItem.sort();
-                    console.log("responselist_:::::::::::::::::::" + self.responseContainerList1);
                     self.responseContainerList1 = self.responseContainerList1;
                     self.update = 0;
-                    console.log("last row inside loop, update: " + self.update);
-                    console.log("last row, list_present: " + JSON.stringify(self.List_present));
                 }
                 self.firstrun = 0;
-                console.log("after firstrun: " + self.firstrun)
-                console.log("after loop, update: " + self.update)
             });
         };
+
+        // get1() {
+        //   var self = this;
+        //   fetch('https://localhost:44366/api/values/')
+        //     .then(function(response) {
+        //         if(response.status !== 200)
+        //             return self.responseIfError = "empty"
+        //     return response.json();
+        //     })
+        //     .then(function(myJson) {
+        //         var newList: any;
+        //         // @ts-ignore
+        //         myJson.forEach(element => {
+        //             if(element.id === self.List_present.id)
+        //                 newList = element;
+        //             console.log(element);
+        //         });
+        //         self.items = JSON.stringify(myJson, null, 2);
+        //         self.responseContainerList1 = myJson;
+        //         self.$store.state.z_string = myJson;
+        //         if(self.firstrun === 0){
+        //             self.List_present = newList;
+        //             self.List_present.listItem.sort();
+        //             self.responseContainerList1 = self.responseContainerList1;
+        //             self.update = 0;
+        //         }
+        //         self.firstrun = 0;
+        //     });
+        // };
 
         get2() {
           var self = this;

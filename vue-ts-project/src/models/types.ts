@@ -13,3 +13,11 @@ export class ListItem1 {
     id = 0;
     created = "";
 }
+
+export class User {
+    Id = 0;
+    FirstName = "";
+    LastName = "";
+    Token = "";
+    UserName = "";
+}
