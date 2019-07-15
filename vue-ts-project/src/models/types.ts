@@ -12,6 +12,9 @@ export class ListItem1 {
     ListItemText = "";
     id = 0;
     created = "";
+    dueDate = "";
+    priority = "";
+    category = "";
 }
 
 export class User {
@@ -20,4 +23,12 @@ export class User {
     LastName = "";
     Token = "";
     UserName = "";
+}
+
+export class UserSettings {
+    id = 0;
+    UserId = 0;
+    Category = "";
+    ColorScheme = 0
+    CategoryId = 0;
 }

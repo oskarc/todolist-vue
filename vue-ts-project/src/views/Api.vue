@@ -14,11 +14,15 @@
                 <ul>
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
-                    <th>{{List_present['title']}} 
-                        <a @click="sortList()">Sort</a>
-                        <font-awesome-icon class="arrowIcon" v-show="sort === 2" :icon="['fas', 'arrow-down']"></font-awesome-icon>
-                        <font-awesome-icon class="arrowIcon" v-show="sort === 1" :icon="['fas', 'arrow-up']"></font-awesome-icon>
-                    </th>
+                    <h1>{{List_present['title']}}</h1>
+                        <li @click="sortByCreatedDate()">Created</li>
+                        <li @click="sortByDueDate()">Due</li>
+                        <li @click="sortByCategory()">Category</li>
+                        <li @click="sortByPriority()">Priority</li>
+                        <li>
+                            <font-awesome-icon class="arrowIcon" v-show="sort === 2" :icon="['fas', 'arrow-down']"></font-awesome-icon>
+                            <font-awesome-icon class="arrowIcon" v-show="sort === 1" :icon="['fas', 'arrow-up']"></font-awesome-icon>
+                        </li>
                 </div>
                     <li>
                         <div class="ListItemDiv" v-for="item in List_present['listItem']" :key="item['id']">
@@ -27,11 +31,37 @@
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
                             </div>
                             <div class="div2">
-                                <p class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="{ 'completed': item['completed']}">{{item['listItemText']}}</p>
-                                <p class="dateString">{{item['created'].replace('T', ' ')}}</p>
+                                <p class="dueDate">Klart: {{item['dueDate'].replace('T', ' ')}}</p>
+                                <p class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <p class="dateString">Skapad: {{item['created'].replace('T', ' ')}}</p>
+                                <input placeholder="Ändra på sysslan här" v-show="edit" type="text" class="editItem" name="editItem" id="editItem" @keypress.enter="EditItemText(item, $event.target.value)"/>
+                                <select v-show="edit" class="editCategory" @change="ChangeCategoryForItem(item, $event.target.value)" name="dropdown" id="dropdown">
+                                    <option selected hidden value="empty">Kategorier</option>
+                                    <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
+                                </select>
+                                <select v-show="edit" class="" @change="EditItemPriority(item, $event.target.value)" name="dropdown" id="dropdown">
+                                    <option selected hidden value="empty">Prioritet</option>
+                                    <option value="Hög">Hög</option>
+                                    <option value="Medel">Medel</option>
+                                    <option value="Låg">Låg</option>
+                                </select>
+                                <input @keypress.enter="EditItemDueDate(item, $event.target.value)" v-show="edit" type="datetime-local" name="itemDueDate" id="itemDueDate">
                             </div>
                         </div>
-                    <input v-show="edit" @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
+                        <div v-show="edit">
+                            <input @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
+                            <select class="AddItemCategory" @change="setCategory($event.target.value)" name="dropdown" id="dropdown">
+                                <option selected hidden value="empty">Kategorier</option>
+                                <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
+                            </select>
+                            <select class="" @change="Priority = $event.target.value" name="dropdown" id="dropdown">
+                                <option selected hidden value="empty">Prioritet</option>
+                                <option value="Hög">Hög</option>
+                                <option value="Medel">Medel</option>
+                                <option value="Låg">Låg</option>
+                            </select>
+                            <input v-model="dueDate" type="datetime-local" name="dueDate" id="dueDate">
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -58,9 +88,10 @@ Vue.component('font-awesome-icon', FontAwesomeIcon);
 export default class Api extends Vue {
     mounted() {
         this.get1();
+        this.getSettings();
         console.log("mounted!!");
     };
-
+        
         firstrun = 1;
         update = 0;
         edit = false;
@@ -80,6 +111,39 @@ export default class Api extends Vue {
         selectedlist = "";
         event = "";
         sort = 1;
+        categories = [];
+        dueDate = "";
+        category = "";
+        categoryClass = "";
+        Priority = "";
+
+        emptyMethod() {
+
+        }
+
+        SetCategoryClassForItem(itemCategory: string) {
+            let value = "";
+            for (let index = 0; index < this.categories.length; index++){
+                if(itemCategory === this.categories[index]['category'])
+                    value = this.categories[index]['colorScheme'];
+            }
+            return value;
+        }
+        setCategory(event: any) {
+            this.category = event;
+        }
+        getSettings() {
+            var self = this;
+            fetch('https://localhost:44366/api/values/getSettings/' + self.$store.state.user['Id'])
+            .then(function(response) {
+                if(response.status !== 200)
+                    return self.responseIfError = "empty"
+            return response.json();
+            })
+            .then(function(myJson) {
+              self.categories = myJson;
+                });
+        }
 
         CompleteListItem(item: boolean) {
             if(item === false){
@@ -92,14 +156,14 @@ export default class Api extends Vue {
             }
         };
 
-        sortList() {
+        sortByCreatedDate() {
             console.log(this.sort)
             if(this.sort === 1){
                 this.List_present.listItem.sort(function(a, b) {
                     if (Date.parse(a.created) > Date.parse(b.created)) 
-                    return 1;
+                        return 1;
                     if (Date.parse(a.created) < Date.parse(b.created)) 
-                    return -1;
+                        return -1;
     
                     return 0;
                 });
@@ -108,9 +172,67 @@ export default class Api extends Vue {
             if(this.sort === 2) {
                 this.List_present.listItem.sort(function(a, b) {
                     if ( Date.parse(a.created) > Date.parse(b.created)) 
-                    return -1;
+                        return -1;
                     if (Date.parse(a.created) < Date.parse(b.created)) 
-                    return 1;
+                        return 1;
+                    
+                    return 0;
+                });
+            }
+            if(this.sort === 2)
+                this.sort = 1;
+            else
+                this.sort = 2;
+        };
+
+        sortByDueDate() {
+            console.log(this.sort)
+            if(this.sort === 1){
+                this.List_present.listItem.sort(function(a, b) {
+                    if (Date.parse(a.dueDate) > Date.parse(b.dueDate)) 
+                        return 1;
+                    if (Date.parse(a.dueDate) < Date.parse(b.dueDate)) 
+                        return -1;
+    
+                    return 0;
+                });
+            }
+
+            if(this.sort === 2) {
+                this.List_present.listItem.sort(function(a, b) {
+                    if ( Date.parse(a.dueDate) > Date.parse(b.dueDate)) 
+                        return -1;
+                    if (Date.parse(a.dueDate) < Date.parse(b.dueDate)) 
+                        return 1;
+                    
+                    return 0;
+                });
+            }
+            if(this.sort === 2)
+                this.sort = 1;
+            else
+                this.sort = 2;
+        };
+
+
+        sortByCategory() {
+            if(this.sort === 1){
+                this.List_present.listItem.sort(function(a, b) {
+                    if (a.category > b.category) 
+                        return 1;
+                    if (a.category < b.category) 
+                        return -1;
+    
+                    return 0;
+                });
+            }
+
+            if(this.sort === 2) {
+                this.List_present.listItem.sort(function(a, b) {
+                    if ( a.category > b.category) 
+                        return -1;
+                    if (a.category < b.category) 
+                        return 1;
                     
                     return 0;
                 });
@@ -121,6 +243,34 @@ export default class Api extends Vue {
                 this.sort = 2;
         };
         
+        sortByPriority() {
+            if(this.sort === 1){
+                this.List_present.listItem.sort(function(a, b) {
+                    if (a.priority > b.priority) 
+                        return 1;
+                    if (a.priority < b.priority) 
+                        return -1;
+    
+                    return 0;
+                });
+            }
+
+            if(this.sort === 2) {
+                this.List_present.listItem.sort(function(a, b) {
+                    if ( a.priority > b.priority) 
+                        return -1;
+                    if (a.priority < b.priority) 
+                        return 1;
+                    
+                    return 0;
+                });
+            }
+            if(this.sort === 2)
+                this.sort = 1;
+            else
+                this.sort = 2;
+        };
+
         presentlist(event: any){
             this.userid = event.userId;
             this.listid = event.listId;
@@ -214,18 +364,56 @@ export default class Api extends Vue {
               headers: {'Content-Type': 'application/json'}});
           };
 
-          saveItem(listitem: ListItem1) {
+        saveItem(listitem: ListItem1) {
 
-          fetch('https://localhost:44366/api/values/SaveItem/', {
-              method: 'POST',
-              body: JSON.stringify(listitem),
-              headers: {'Content-Type': 'application/json'}});
+                fetch('https://localhost:44366/api/values/SaveItem/', {
+                    method: 'POST',
+                    body: JSON.stringify(listitem),
+                    headers: {'Content-Type': 'application/json'}});
           };
 
-          AddItem(ListItemText: string) {
-                    var self = this;
+        EditItemText(listitem: ListItem1, newText: string){
+                var self = this;
+                console.log(newText);
+                listitem.ListItemText = newText;
+                fetch('https://localhost:44366/api/values/SaveItem/', {
+                            method: 'POST',
+                            body: JSON.stringify(listitem),
+                            headers: {'Content-Type': 'application/json'}}).then(function() {
+                                self.get1();
+                            });
+            }
+
+        EditItemPriority(listitem: ListItem1, Priority: string){
+                var self = this;
+                console.log(Priority);
+                listitem.priority = Priority;
+                fetch('https://localhost:44366/api/values/SaveItem/', {
+                            method: 'POST',
+                            body: JSON.stringify(listitem),
+                            headers: {'Content-Type': 'application/json'}}).then(function() {
+                                self.get1();
+                            });
+            }
+
+        EditItemDueDate(listitem: ListItem1, DueDate: string){
+                var self = this;
+                console.log(DueDate);
+                listitem.dueDate = DueDate;
+                fetch('https://localhost:44366/api/values/SaveItem/', {
+                            method: 'POST',
+                            body: JSON.stringify(listitem),
+                            headers: {'Content-Type': 'application/json'}}).then(function() {
+                                self.get1();
+                            });
+            }
+
+        AddItem(ListItemText: string) {
+              var self = this;
+              alert(self.category)
+              console.log(self.category)
                     self.event = ListItemText;
-                    var bodyContent = {ListId: self.listid, UserId: self.userid, ListItemText: ListItemText};
+                    var bodyContent = {ListId: self.listid, UserId: self.userid, ListItemText: ListItemText, dueDate: self.dueDate, category: self.category, Priority: self.Priority};
                 fetch('https://localhost:44366/api/values/AddItem/', {
                     method: 'POST',
                     body: JSON.stringify(bodyContent),
@@ -237,6 +425,18 @@ export default class Api extends Vue {
                     });
                     console.log("after then")
           };
+
+        ChangeCategoryForItem(listitem: ListItem1, newCategory: string){
+              var self = this;
+              console.log(newCategory)
+              listitem.category = newCategory;
+              fetch('https://localhost:44366/api/values/SaveItem/', {
+              method: 'POST',
+              body: JSON.stringify(listitem),
+              headers: {'Content-Type': 'application/json'}}).then(function(){
+                self.get1();
+              });
+          }
 
         getAttempt() {
 
@@ -375,6 +575,13 @@ export default class Api extends Vue {
 </script>
 
 <style scoped>
+.editItem{
+    width: 95%;
+    margin-left: 25px;
+}
+.editCategory{
+    margin-left: 25px;
+}
 .div1 {
     float: left;
 }
@@ -417,6 +624,12 @@ export default class Api extends Vue {
 }
 .ListItemDiv span {
     position: inline;
+}
+.ListItemDiv li {
+    font-weight: bolder;
+    padding: 0;
+    font-size: 1.3em;
+    margin-left: 70%;
 }
 .completed{
     text-decoration: line-through;
@@ -516,7 +729,7 @@ body {
     min-width: 80%;
     word-wrap: break-word;
     display: inline;
-    margin-left: 15%;
+    margin-left: 50px;
 }
 .dateString {
     color: #376ccd;
@@ -526,6 +739,34 @@ body {
 }
 .arrowIcon {
     font-size: 0.8em;
+}
+.colorscheme1 {
+    color: green;
+    border: green 2px solid;
+}
+.colorscheme2 {
+    color: purple;
+    border: purple 2px solid;
+}
+.colorscheme3 {
+    color: yellow;
+    border: yellow 2px solid;
+}
+.colorscheme4 {
+    color: orange;
+    border: orange 2px solid;
+
+}
+.colorscheme5 {
+    color: red;
+    border: red 2px solid;
+
+}
+.dueDate {
+    color:palegreen;
+}
+.AddItemCategory{
+    margin-left: 50px;
 }
 </style>
 

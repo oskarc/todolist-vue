@@ -6,6 +6,7 @@
         <!-- <router-link to="/">Home</router-link> | -->
         <span v-show="$store.state.isLoggedIn" ><router-link to="/api">Mina Listor</router-link> | </span>
         <span v-show="$store.state.isLoggedIn"><router-link to="/create">Skapa Lista</router-link> | </span>
+        <span v-show="$store.state.isLoggedIn" ><router-link to="/preferences">Inställningar</router-link> | </span>
         <span v-show="!$store.state.isLoggedIn"><router-link to="/register">Registrera</router-link> | </span>
         <span><router-link to="/login">{{$store.state.Login}}</router-link></span>
         <!-- <router-link to="/">.</router-link>  -->
