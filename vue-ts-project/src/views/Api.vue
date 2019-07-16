@@ -1,20 +1,28 @@
 <template>
   <div class="">
       <h1>Mina Listor</h1> <br>
+      <!-- <p>{{List_present}}</p> -->
       <div v-if="responseIfError !== 'empty'">
-        <select class="select-css" @change="presentlist($event.target.selectedOptions[0]._value)" name="dropdown" id="dropdown">
+        <select class="select-css" @change="presentlist($event.target.selectedOptions[0]._value)" name="dropdown" id="dropdown"> 
             <option selected hidden value="empty">Välj Lista</option>
             <option v-for="obj in responseContainerList1" :key="obj['id']" :value="obj">{{obj['title']}}</option>
-        </select>
+        </select> 
+            <font-awesome-icon @click="createListMode = true" v-show="!createListMode" v-bind:class="{addList: 'addList'}" class="iconPlus" :icon="['fas', 'plus']"></font-awesome-icon> 
+            <font-awesome-icon @click="createListMode = false" v-show="createListMode" v-bind:class="{cancelAddList: 'cancelAddList'}" class="iconPlus" :icon="['fas', 'check']"></font-awesome-icon>
+        <div v-show="createListMode">
+            <p>Create</p>
+            <input type="text" placeholder="Ange Titel" @keypress.enter="createList($event.target.value)">
+        </div>
       </div>
-      <div v-if="responseIfError !== 'empty' && List_present !== 'empty'">
+      <div v-if="responseIfError !== 'empty' && List_present !== 'empty' && List_present !== undefined">
           <div v-if="List_present['UserId'] !== 0" class="ContainerDiv">
             <div class="listContainer">
                 <font-awesome-icon class="editButton" @click="edit = CompleteListItem(edit)" :icon="['fas', 'edit']" ></font-awesome-icon>
                 <ul>
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
-                    <h1>{{List_present['title']}}</h1>
+                    <h1 v-show="!triggerTitleEdit" @click="triggerTitleEdit = keepBool(edit)" class="listTitle">{{List_present['title']}}</h1>
+                        <input v-show="triggerTitleEdit && edit" :value="List_present['title']" type="text" @keyup.esc="triggerTitleEdit = false" @keypress.enter="triggerTitleEdit = false, EditListTitle(List_present, $event.target.value)">
                         <li @click="sortByCreatedDate()">Created</li>
                         <li @click="sortByDueDate()">Due</li>
                         <li @click="sortByCategory()">Category</li>
@@ -31,10 +39,11 @@
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
                             </div>
                             <div class="div2">
-                                <p class="dueDate">Klart: {{item['dueDate'].replace('T', ' ')}}</p>
-                                <p class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <p class="dueDate">Klart: {{item['dueDate'].replace('T', ' ')}}</p><span :class="item['priority']">{{item['priority']}}</span>
+                                <p v-show="edit && !hide" class="listItem" @click="triggerItemTextEdit = keepBool(edit), hide = changeBool(hide), focusElement(item['id'])" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <p v-show="!edit" class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <input placeholder="Ändra på sysslan här" :value="item['listItemText']" v-show="triggerItemTextEdit && edit" type="text" :ref="item['id']" class="editItem" name="editItem" id="editItem" @keyup.esc="triggerItemTextEdit = changeBool(triggerItemTextEdit), hide = changeBool(hide)" @keypress.enter="EditItemText(item, $event.target.value), triggerItemTextEdit = changeBool(triggerItemTextEdit), hide = changeBool(hide)"/>
                                 <p class="dateString">Skapad: {{item['created'].replace('T', ' ')}}</p>
-                                <input placeholder="Ändra på sysslan här" v-show="edit" type="text" class="editItem" name="editItem" id="editItem" @keypress.enter="EditItemText(item, $event.target.value)"/>
                                 <select v-show="edit" class="editCategory" @change="ChangeCategoryForItem(item, $event.target.value)" name="dropdown" id="dropdown">
                                     <option selected hidden value="empty">Kategorier</option>
                                     <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
@@ -50,7 +59,7 @@
                         </div>
                         <div v-show="edit">
                             <input @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
-                            <select class="AddItemCategory" @change="setCategory($event.target.value)" name="dropdown" id="dropdown">
+                            <select class="AddItemCategory" @change="category = $event.target.value" name="dropdown" id="dropdown">
                                 <option selected hidden value="empty">Kategorier</option>
                                 <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
                             </select>
@@ -76,25 +85,29 @@ import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
 import {List1, ListItem1} from '@/models/types';
 import { library, config } from '@fortawesome/fontawesome-svg-core';
-import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown} from "@fortawesome/free-solid-svg-icons";
+import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown, faPlus, faMehRollingEyes} from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt,faCheckCircle} from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck, faArrowUp, faArrowDown );
+library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck, faArrowUp, faArrowDown, faPlus );
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 
 @Component
 export default class Api extends Vue {
     mounted() {
-        this.get1();
+        this.getUserLists();
         this.getSettings();
         console.log("mounted!!");
     };
-        
+        hide = false;
+        title = "";
+        triggerTitleEdit = false;
+        triggerItemTextEdit = false;
         firstrun = 1;
         update = 0;
         edit = false;
+        createListMode = false;
         dropdown = "Välj Lista";
         items= "null";
         inputValue= "this is input";
@@ -116,9 +129,41 @@ export default class Api extends Vue {
         category = "";
         categoryClass = "";
         Priority = "";
+        addList = true;
+        cancelAddList = true;
+        newList = new List1;
+        addedList = new List1;
+
 
         emptyMethod() {
 
+        }
+
+        // focusElement(elementId: string) {
+        //     console.log(elementId)
+        //     console.log(this.$refs)
+        //     console.log(this.$refs[elementId])
+        //     this.$refs[elementId].onFocus;
+        // }
+        
+        changeBool(bool: boolean) {
+            if(bool)
+                return false;
+            if(!bool)
+                return true;
+        }
+        keepBool(bool: boolean) {
+            if(bool)
+                return true;
+        }
+        createList(titel: string) {
+            this.newList.UserId = this.$store.state.user['Id']
+            this.newList.Title = titel;
+            this.AddList(this.newList);
+            console.log(this.List_present)
+            this.newList = new List1;
+            console.log(this.List_present)
+            this.createListMode = false;
         }
 
         SetCategoryClassForItem(itemCategory: string) {
@@ -129,9 +174,7 @@ export default class Api extends Vue {
             }
             return value;
         }
-        setCategory(event: any) {
-            this.category = event;
-        }
+
         getSettings() {
             var self = this;
             fetch('https://localhost:44366/api/values/getSettings/' + self.$store.state.user['Id'])
@@ -246,22 +289,28 @@ export default class Api extends Vue {
         sortByPriority() {
             if(this.sort === 1){
                 this.List_present.listItem.sort(function(a, b) {
-                    if (a.priority > b.priority) 
+                    console.log(a.priority,b.priority)
+                    if(a.priority === null || b.priority === null)
+                        return -2;
+                    if (a.priority === "Hög" && b.priority === "Medel" || b.priority === "Låg") 
                         return 1;
-                    if (a.priority < b.priority) 
+                    if (a.priority === 'Låg' && b.priority === "Medel" || b.priority === "Hög") 
                         return -1;
-    
+
                     return 0;
                 });
             }
 
             if(this.sort === 2) {
                 this.List_present.listItem.sort(function(a, b) {
-                    if ( a.priority > b.priority) 
+                    console.log(a.priority,b.priority)
+                    if(a.priority === null || b.priority === null)
+                        return -2;
+                    if (a.priority === "Hög" && b.priority === "Medel" || b.priority === "Låg") 
                         return -1;
-                    if (a.priority < b.priority) 
+                    if (a.priority === 'Låg' && b.priority === "Medel" || b.priority === "Hög") 
                         return 1;
-                    
+
                     return 0;
                 });
             }
@@ -279,82 +328,92 @@ export default class Api extends Vue {
             this.List_present = event;
         };
 
-        get1() {
+        getUserLists() {
           var self = this;
           console.log(self.$store.state.user)
-          fetch('https://localhost:44366/api/values/new/' + self.$store.state.user['Id'])
+          fetch('https://localhost:44366/api/values/UserLists/' + self.$store.state.user['Id'])
             .then(function(response) {
                 if(response.status !== 200)
                     return self.responseIfError = "empty"
             return response.json();
             })
             .then(function(myJson) {
+                console.log("myjson" + JSON.stringify(myJson, null, 2))
+                var newList: any;
+                if(self.List_present === undefined)
+                    self.List_present = myJson[myJson.length -1];
+
+                if(self.List_present['UserId'] !== 0)
+                    self.List_present = myJson[myJson.length -1];
+
+                // @ts-ignore
+                myJson.forEach(element => {
+                    if(element.id === self.List_present.id)
+                        newList = element;
+                    console.log(element);
+                    })
+                        console.log("present" + JSON.stringify(self.List_present, null, 2))
+                        console.log("after" + newList)
+                        self.items = JSON.stringify(myJson, null, 2);
+                        self.responseContainerList1 = myJson;
+                        self.$store.state.z_string = myJson;
+                        self.List_present = newList;
+                        if(self.List_present !== undefined)
+                            self.List_present.listItem.sort()
+
+                        })
+        };
+
+        getUserListsOnDelete() {
+          var self = this;
+          console.log(self.$store.state.user)
+          fetch('https://localhost:44366/api/values/UserLists/' + self.$store.state.user['Id'])
+            .then(function(response) {
+                if(response.status !== 200)
+                    return self.responseIfError = "empty"
+            return response.json();
+            })
+            .then(function(myJson) {
+                console.log("myjson" + JSON.stringify(myJson, null, 2))
                 var newList: any;
                 // @ts-ignore
                 myJson.forEach(element => {
                     if(element.id === self.List_present.id)
                         newList = element;
                     console.log(element);
-                });
-                self.items = JSON.stringify(myJson, null, 2);
-                self.responseContainerList1 = myJson;
-                self.$store.state.z_string = myJson;
-                if(self.firstrun === 0){
-                    self.List_present = newList;
-                    self.List_present.listItem.sort();
-                    self.responseContainerList1 = self.responseContainerList1;
-                    self.update = 0;
-                }
-                self.firstrun = 0;
-            });
+                    })
+                        console.log("present" + JSON.stringify(self.List_present, null, 2))
+                        console.log("after" + newList)
+                        self.items = JSON.stringify(myJson, null, 2);
+                        self.responseContainerList1 = myJson;
+                        self.$store.state.z_string = myJson;
+                        self.List_present = newList;
+                        if(self.List_present !== undefined)
+                            self.List_present.listItem.sort()
+
+                        })
         };
 
-        // get1() {
-        //   var self = this;
-        //   fetch('https://localhost:44366/api/values/')
-        //     .then(function(response) {
-        //         if(response.status !== 200)
-        //             return self.responseIfError = "empty"
-        //     return response.json();
-        //     })
-        //     .then(function(myJson) {
-        //         var newList: any;
-        //         // @ts-ignore
-        //         myJson.forEach(element => {
-        //             if(element.id === self.List_present.id)
-        //                 newList = element;
-        //             console.log(element);
-        //         });
-        //         self.items = JSON.stringify(myJson, null, 2);
-        //         self.responseContainerList1 = myJson;
-        //         self.$store.state.z_string = myJson;
-        //         if(self.firstrun === 0){
-        //             self.List_present = newList;
-        //             self.List_present.listItem.sort();
-        //             self.responseContainerList1 = self.responseContainerList1;
-        //             self.update = 0;
-        //         }
-        //         self.firstrun = 0;
-        //     });
-        // };
-
-        get2() {
+        getUserList() {
           var self = this;
-          fetch('https://localhost:44366/api/values/' + self.input1,{
-              method: 'GET'
-          })
-            .then(function(response) {
+          console.log(self.$store.state.user)
+          var bodyContent = { UserId: self.$store.state.user['Id'], ListId: self.responseContainerList1[self.responseContainerList1.length -1]['listId']};
+          fetch('https://localhost:44366/api/values/UserList/', {
+              method: 'POST',
+              body: JSON.stringify(bodyContent),
+              headers: {'Content-Type': 'application/json'}}).then(function(response) {
+                if(response.status !== 200)
+                    return self.responseIfError = "empty"
             return response.json();
             })
             .then(function(myJson) {
-                self.items = myJson;
-                // console.log(JSON.stringify(myJson));
-            });
+                console.log("here" + myJson)
+                    self.List_present = myJson;
+                    self.List_present.listItem.sort()
+                    })
          };
 
-        
         saveAttempt() {
-
             var self = this;
             console.log(self.inputList);
             console.log(self.responseContainerList1)
@@ -365,7 +424,6 @@ export default class Api extends Vue {
           };
 
         saveItem(listitem: ListItem1) {
-
                 fetch('https://localhost:44366/api/values/SaveItem/', {
                     method: 'POST',
                     body: JSON.stringify(listitem),
@@ -380,7 +438,8 @@ export default class Api extends Vue {
                             method: 'POST',
                             body: JSON.stringify(listitem),
                             headers: {'Content-Type': 'application/json'}}).then(function() {
-                                self.get1();
+                                // self.get1();
+                                self.getUserList();
                             });
             }
 
@@ -392,7 +451,8 @@ export default class Api extends Vue {
                             method: 'POST',
                             body: JSON.stringify(listitem),
                             headers: {'Content-Type': 'application/json'}}).then(function() {
-                                self.get1();
+                                // self.get1();
+                                self.getUserList();
                             });
             }
 
@@ -404,9 +464,40 @@ export default class Api extends Vue {
                             method: 'POST',
                             body: JSON.stringify(listitem),
                             headers: {'Content-Type': 'application/json'}}).then(function() {
-                                self.get1();
+                                // self.get1();
+                                self.getUserList();
                             });
             }
+        EditListTitle(list: List1, title: string){
+                var self = this;
+                console.log(title);
+                list.Title = title;
+                fetch('https://localhost:44366/api/values/UpdateTitle/', {
+                            method: 'POST',
+                            body: JSON.stringify(list),
+                            headers: {'Content-Type': 'application/json'}}).then(function() {
+                                self.getUserLists();
+                            });
+            }
+
+        AddList(list: List1) {
+            var self = this;
+            console.log(list);
+          fetch('https://localhost:44366/api/values/', {
+              method: 'POST',
+              body: JSON.stringify(list),
+              headers: {'Content-Type': 'application/json'}
+                }).then(function(response) {
+                  if(response.status === 200){
+                     // self.resetForm();
+                  }
+                  else {
+                      alert("Något gick fel! Testa igen.");
+                  }
+                  }).then(function(){
+                     self.getUserLists();
+                  })
+          };
 
         AddItem(ListItemText: string) {
               var self = this;
@@ -421,7 +512,8 @@ export default class Api extends Vue {
                     }).then(function(){   
                         self.firstrun = 0;
                         console.log("then")
-                        self.get1();
+                        // self.get1();
+                         self.getUserList();
                     });
                     console.log("after then")
           };
@@ -434,32 +526,32 @@ export default class Api extends Vue {
               method: 'POST',
               body: JSON.stringify(listitem),
               headers: {'Content-Type': 'application/json'}}).then(function(){
-                self.get1();
+                // self.get1();
+                self.getUserList();
               });
           }
 
-        getAttempt() {
+        // getAttempt() {
+        //         var self = this;
+        //         self.inputList = self.$store.state.test;
+        //         console.log(self.inputList);
 
-                var self = this;
-                self.inputList = self.$store.state.test;
-                console.log(self.inputList);
+        //         fetch('https://localhost:44366/api/values/new' + '/' + self.listid + '/' + self.userid, {
+        //             method: 'GET',
+        //             headers: {'Content-Type': 'application/json'}
+        //         }).then(function(response) {
+        //             return response.json();
+        //             }).then(function(myJson) {
+        //                 self.items = myJson;
+        //                 console.log("myJson: " + JSON.stringify(myJson));
+        //             });
+        //             var items = JSON.stringify("self.items: " + self.items);
+        //             var list = new List1;
+        //             console.log(self.items);
+        //             console.log(items);
 
-                fetch('https://localhost:44366/api/values/new' + '/' + self.listid + '/' + self.userid, {
-                    method: 'GET',
-                    headers: {'Content-Type': 'application/json'}
-                }).then(function(response) {
-                    return response.json();
-                    }).then(function(myJson) {
-                        self.items = myJson;
-                        console.log("myJson: " + JSON.stringify(myJson));
-                    });
-                    var items = JSON.stringify("self.items: " + self.items);
-                    var list = new List1;
-                    console.log(self.items);
-                    console.log(items);
-
-                    return self.items;
-            };
+        //             return self.items;
+        //     };
 
         postAttempt2() {
 
@@ -467,7 +559,7 @@ export default class Api extends Vue {
                 var bodyContent = {ListId: self.listid, UserId: self.userid};
                 console.log(self.inputList);
 
-            fetch('https://localhost:44366/api/values/newPost', {
+            fetch('https://localhost:44366/api/values/UserList', {
                 method: 'POST',
                 body: JSON.stringify(bodyContent),
                 headers: {'Content-Type': 'application/json'}
@@ -522,6 +614,7 @@ export default class Api extends Vue {
                 // console.log(data);
                 })
             };
+
         delete1(id: number) {
                 var self = this;
                 fetch('https://localhost:44366/api/values/' + id, 
@@ -536,14 +629,10 @@ export default class Api extends Vue {
                     return self.responseIfError = "empty"
                 return response.json();
                 }).then(function(myJson) {
-                self.items = JSON.stringify(myJson, null, 2);
-                if(self.responseIfError !== "empty") {
-                    self.List_present['UserId'] = 0;
-                    self.responseContainerList1 = myJson;
-                }
-                self.$store.state.z_string = myJson;
+                    self.getUserListsOnDelete();
             });
             };
+
         deleteItem(id: number) {
             var self = this;
             fetch('https://localhost:44366/api/values/DeleteItem/' + id, {
@@ -557,17 +646,7 @@ export default class Api extends Vue {
                 else
                     return response.json();
             }).then(function(myJson) {
-                // self.items = JSON.stringify(myJson, null, 2);
-                // if(self.responseIfError !== "empty"){
-                    
-                //     for (let index = 0; index < self.List_present['listItem'].length; index++) {
-                //         if(self.List_present['listItem'][index]['id'] === id)
-                //             self.List_present['listItem'].splice(index, 1);  
-                //     };
-                //     self.responseContainerList1 = myJson;
-                // }
-                // self.$store.state.z_string = myJson;
-                self.get1();
+                 self.getUserLists();
             });
         };
 
@@ -575,6 +654,29 @@ export default class Api extends Vue {
 </script>
 
 <style scoped>
+.listTitle{
+    margin-bottom: 8px;
+}
+.iconPlus{
+    font-size: 1.5em;
+    display: inline;
+    margin-left: 20px;
+}
+.addList{
+    color: teal;
+}
+.cancelAddList {
+    color: tomato;
+}
+.Låg {
+    color: blue;
+}
+.Medel {
+    color: yellowgreen
+}
+.Hög {
+    color: tomato;
+}
 .editItem{
     width: 95%;
     margin-left: 25px;
@@ -642,17 +744,16 @@ export default class Api extends Vue {
 }
 
 .select-css {
-    display: block;
+    display: inline;
     font-size: 16px;
     font-family: sans-serif;
     font-weight: 700;
     color: #444;
     line-height: 1.3;
     padding: .6em 1.4em .5em .8em;
-    width: 100%;
     max-width: 30%; 
     box-sizing: border-box;
-    margin-left: 35%;
+    margin-left: 8%;
     border: 1px solid #aaa;
     box-shadow: 0 1px 0 1px rgba(0,0,0,.04);
     border-radius: .5em;

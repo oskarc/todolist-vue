@@ -111,10 +111,17 @@ export default class Create extends Vue {
           fetch('https://localhost:44366/api/values/', {
               method: 'POST',
               body: JSON.stringify(self.listItems2),
-              headers: {'Content-Type': 'application/json'}});
-
-              this.resetForm();
-              this.successText = "lista Sparad"
+              headers: {'Content-Type': 'application/json'}}).then(function(response) {
+                  if(response.status === 200){
+                      self.resetForm();
+                      self.successText = "lista Sparad";
+                      self.errorText = "";
+                  }
+                  else {
+                      self.successText = "";
+                      self.errorText = "Något gick fel! Testa igen.";
+                  }
+              });
           };
 
 }
