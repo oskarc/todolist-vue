@@ -1,7 +1,7 @@
 <template>
   <div class="">
       <h1>Mina Inställningar</h1> <br>
-      <div class="newCategory" v-if="responseIfError !== 'empty'">
+      <!-- <div class="newCategory" v-if="responseIfError !== 'empty'">
         <p >Namnge Ny Kategori</p>
         <input type="text" v-model="CategoryTitle"/> <br>
         <select class="select-css" v-model="selected" @change="presentlist($event.target.value)" name="dropdown" id="dropdown">
@@ -36,33 +36,105 @@
         </select>
         <input type="text" v-model="ChangeCategoryTitle"/> <br>
         <button @click="UpdateName()">Submit</button>
-      </div>
-      <div v-if="responseIfError !== 'empty'">
+      </div> -->
+      <!-- <div class="container" v-if="responseIfError !== 'empty'">
+          <span>{{edit}}</span>
       <p>Mina Kategorier</p>
         <table>
             <tr>
             <th>Kategori</th>
             <th>Färgschema</th>
             </tr>
+            <font-awesome-icon @click="toggleDelete = changeBool(toggleDelete)"  class="iconPlus cancelAddCategory" :icon="['fas', 'check']"></font-awesome-icon>
             <tr :key="item['Id']" v-for="item in categories">
-                <td>{{item['category']}}</td>
-                <td :class="item['colorScheme']">{{item['colorScheme']}}</td>
+                <td :id="item['id']" v-show="editTitle !== item['id']" @click="editTitle = item['id']">{{item['category']}}</td>
+                <input @blur="editTitle = 0" :value="item['category']" v-show="editTitle === item['id'] && show(item['id'])" @keyup.enter="Changecategory = item, ChangeCategoryTitle = $event.target.value, UpdateName()" @keyup.esc="editTitle = false" type="text" :ref="'input' + item['id']" :id="'input' + item['id']">
+                <td v-show="edit !== item['id']" @click="edit = item['id'], expand(item['id'])" :ref="item['id']" :id="item['id']" :class="item['colorScheme']">{{item['colorScheme']}}</td>
+                <select @blur="edit = 0" v-show="edit === item['id']" class="select-css"  @change="Changecategory = item, ChangecolorScheme = $event.target.value, UpdateColor()" name="dropdown" :ref="'select' + item['id']" :id="'select' + item['id']">
+                    <option value="colorscheme1">colorscheme 1</option>
+                    <option value="colorscheme2">colorscheme 2</option>
+                    <option value="colorscheme3">colorscheme 3</option>
+                    <option value="colorscheme4">colorscheme 4</option>
+                    <option value="colorscheme5">colorscheme 5</option>
+                </select>
+            <font-awesome-icon v-show="toggleDelete" @click="DeleteUserSetting(item)" class="iconPlus" :icon="['far', 'trash-alt']"></font-awesome-icon> 
             </tr>
         </table>
-      </div>
-  </div>
+            <font-awesome-icon @click="newCategoryToggle = true" v-show="!newCategoryToggle"  class="iconPlus addCategory" :icon="['fas', 'plus']"></font-awesome-icon> 
+            <font-awesome-icon @click="newCategoryToggle = false" v-show="newCategoryToggle"  class="iconPlus cancelAddCategory" :icon="['fas', 'check']"></font-awesome-icon>
+        <input v-show="newCategoryToggle" type="text" v-model="CategoryTitle" @keyup.enter="AddUserSetting($event.target.value)"/> <br>
+      </div> -->
+ 
+  
+  <div class="divTable blueTable">
+        <div class="divTableHeading">
+            <div class="divTableRow">
+                <div class="divTableHead">
+                    <p>Kategori</p>
+                </div>
+                <div class="divTableHead">
+                   <p>Färgschema</p>
+                </div>
+                <div class="divTableHead" style="width:20px; ">
+                    <font-awesome-icon @click="toggleDelete = changeBool(toggleDelete)"  class="iconPlus cancelAddCategory" :icon="['fas', 'check']"></font-awesome-icon>
+                </div>
+            </div>
+        </div>
+        <div class="divTableBody">
+            <div class="divTableRow" :key="item['Id']" v-for="item in categories">
+                <div  class="divTableCell">
+                    <p  :id="item['id']" v-show="editTitle !== item['id']" @click="editTitle = item['id']" >{{item['category']}}</p>
+                    <input @blur="editTitle = 0" :value="item['category']" v-show="editTitle === item['id'] && show(item['id'])" @keyup.enter="Changecategory = item, ChangeCategoryTitle = $event.target.value, UpdateName()" @keyup.esc="editTitle = false" type="text" :ref="'input' + item['id']" :id="'input' + item['id']">
+                </div>
+                <div class="divTableCell"  >
+                    <p v-show="edit !== item['id']" @click="edit = item['id'], expand(item['id'])" :ref="item['id']" :id="item['id']" :class="item['colorScheme']" >{{item['colorScheme']}}</p>
+                    <select @blur="edit = 0" v-show="edit === item['id']" class="select-css"  @change="Changecategory = item, ChangecolorScheme = $event.target.value, UpdateColor()" name="dropdown" :ref="'select' + item['id']" :id="'select' + item['id']">
+                        <option value="colorscheme1">colorscheme 1</option>
+                        <option value="colorscheme2">colorscheme 2</option>
+                        <option value="colorscheme3">colorscheme 3</option>
+                        <option value="colorscheme4">colorscheme 4</option>
+                        <option value="colorscheme5">colorscheme 5</option>
+                    </select>
+                </div>
+                <div  class="divTableCell" v-show="toggleDelete">
+                   <font-awesome-icon @click="DeleteUserSetting(item)" class="iconPlus" :icon="['far', 'trash-alt']"></font-awesome-icon>
+                </div>
+            </div>
+            <div class="divTableRow">
+                <div class="divTableCell">
+                    <font-awesome-icon @click="newCategoryToggle = true" v-show="!newCategoryToggle"  class="iconPlus addCategory" :icon="['fas', 'plus']"></font-awesome-icon> 
+                    <font-awesome-icon @click="newCategoryToggle = false" v-show="newCategoryToggle"  class="iconPlus cancelAddCategory" :icon="['fas', 'check']"></font-awesome-icon>
+                    <input v-show="newCategoryToggle" type="text" v-model="CategoryTitle" @keyup.enter="AddUserSetting($event.target.value)"/>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <div class="blueTable outerTableFooter">
+        <div class="tableFootStyle">
+            <div class="links">
+                <a href="#">&laquo;</a> 
+                <a class="active" href="#">1</a> 
+                <a href="#">2</a> 
+                <a href="#">3</a> 
+                <a href="#">4</a> 
+                <a href="#">&raquo;</a>
+            </div>
+        </div>
+    </div>
+     -->
+ </div>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
-import {List1, ListItem1} from '@/models/types';
+import {List1, ListItem1, UserSettings} from '@/models/types';
 import { library, config } from '@fortawesome/fontawesome-svg-core';
-import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown} from "@fortawesome/free-solid-svg-icons";
+import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown, faPlus} from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt,faCheckCircle} from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
-library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck, faArrowUp, faArrowDown );
+library.add(faTrashAlt, faTimesCircle, faEdit, faCheckCircle, faCheck, faArrowUp, faArrowDown, faPlus );
 Vue.component('font-awesome-icon', FontAwesomeIcon);
 
 
@@ -72,6 +144,10 @@ export default class Preferences extends Vue {
         this.getSettings();
         console.log("mounted!!");
     };
+        toggleDelete = false;
+        newCategoryToggle = false;
+        editTitle = 0;
+        edit = 0;
         selected = "";
         CategoryTitle = "";
         categories = [];
@@ -81,7 +157,53 @@ export default class Preferences extends Vue {
         ChangeCategoryTitle = "";
         responseIfError = "";
        
+            // console.log("#2 " + this.$refs[input][0].id);
+            // document.getElementById(this.$refs[input][0].id).focus();
 
+        show(itemId: number) {
+            console.log(this.editTitle)
+            if(itemId === undefined || itemId === 0)
+                return false;
+            console.log(itemId)
+            var id = "input" + itemId;
+            console.log(this.$refs)
+            console.log(id)
+            console.log(this.$refs[id])
+            if(this.editTitle === itemId){
+                var self = this;
+                setTimeout(function () {
+                    (<HTMLInputElement>self.$refs[id][0]).focus();
+                    }, 1)
+                return true;
+            }
+        }
+       log(value: string) {
+           console.log(value);
+       }
+        keepBool(bool: boolean) {
+            if(bool)
+                return true;
+            else 
+                return false;
+        }
+
+        expand(itemId) {
+            //doesnt work yet
+            // var id = 'select' + itemId;
+            // console.log(this.$refs[id])
+            // var self = this;
+            // setTimeout(function () {
+            //     self.$refs[id][0].click();
+            //         }, 1)
+        }
+
+        changeBool(bool: boolean) {
+            console.log(bool)
+            if(!bool)
+                return true;
+            if(bool)
+                return false;
+        }
 
         getCategoryName(event: string){
             console.log(event);
@@ -117,6 +239,8 @@ export default class Preferences extends Vue {
                 }).then(function() {
                     self.getSettings();
                 });
+
+                self.editTitle = false;
         }
 
         UpdateColor() {
@@ -131,6 +255,8 @@ export default class Preferences extends Vue {
                 }).then(function() {
                     self.getSettings();
                 });
+
+                self.edit = false;
         }
 
         getSettings() {
@@ -146,14 +272,29 @@ export default class Preferences extends Vue {
                 });
         }
 
-        AddUserSetting() {
+        AddUserSetting(categoryTitle: string) {
             var self = this;
             var bodyContent = {UserId: self.$store.state.user['Id'], 
-                               ColorScheme: self.selected, 
-                               Category: self.CategoryTitle};
+                               ColorScheme: "colorscheme1", 
+                               Category: categoryTitle};
         
             fetch('https://localhost:44366/api/values/AddUserSetting/', {
                 method: 'POST',
+                body: JSON.stringify(bodyContent),
+                headers: {'Content-Type': 'application/json'}
+                }).then(function() {
+                    self.getSettings();
+                });
+                self.newCategoryToggle = false;
+        }
+        DeleteUserSetting(item: UserSettings) {
+            console.log(item)
+            var self = this;
+            item.UserId = self.$store.state.user['Id'];
+            var bodyContent = item;
+        
+            fetch('https://localhost:44366/api/values/DeleteUserSetting/', {
+                method: 'DELETE',
                 body: JSON.stringify(bodyContent),
                 headers: {'Content-Type': 'application/json'}
                 }).then(function() {
@@ -173,6 +314,41 @@ export default class Preferences extends Vue {
 </script>
 
 <style scoped>
+font-awesome-icon {
+    display: flex;
+    float: right;
+}
+.container {
+    max-width: 40%;
+    margin-left: 30%;
+}
+table {
+    /* background-color: green; */
+}
+
+th {
+    border: #3bb273 1px solid;
+    background-color: white;
+}
+
+td {
+    background-color: white;
+    font-size: 2em;
+    min-width: 50%;
+}
+
+.iconPlus{
+    font-size: 1.5em;
+    display: inline;
+    margin-right: 20px;
+}
+.addCategory{
+    color: teal;
+}
+.cancelAddCategory {
+    color: tomato;
+    font-size: 0.8em;
+}
 .updateCategories{
     border: purple solid 2px;
 
@@ -350,5 +526,86 @@ body {
 .dueDate {
     color:palegreen;
 }
+
+p {
+    font-size: 2em;
+    margin: 4px;
+}
+.divTable {
+    max-width: 60%;
+    margin-left: 25%;
+}
+div.blueTable {
+  border: 1px solid royalblue;
+  background-color: white;
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+.divTable.blueTable .divTableCell, .divTable.blueTable .divTableHead {
+  border: 1px solid #AAAAAA;
+  padding: 3px 2px;
+}
+.divTable.blueTable .divTableBody .divTableCell {
+  font-size: 13px;
+}
+.divTable.blueTable .divTableRow:nth-child(even) {
+  background: #D0E4F5;
+}
+.divTable.blueTable .divTableHeading {
+  background: royalblue;
+  background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  background: -webkit-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  border-bottom: 2px solid #444444;
+}
+.divTable.blueTable .divTableHeading .divTableHead {
+  font-size: 15px;
+  font-weight: bold;
+  color: #FFFFFF;
+  border-left: 2px solid #D0E4F5;
+}
+.divTable.blueTable .divTableHeading .divTableHead:first-child {
+  border-left: none;
+}
+
+.blueTable .tableFootStyle {
+  font-size: 14px;
+  font-weight: bold;
+  color: #FFFFFF;
+  background: #D0E4F5;
+  background: -moz-linear-gradient(top, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
+  background: -webkit-linear-gradient(top, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
+  background: linear-gradient(to bottom, #dcebf7 0%, #d4e6f6 66%, #D0E4F5 100%);
+  border-top: 2px solid #444444;
+}
+.blueTable .tableFootStyle {
+  font-size: 14px;
+}
+.blueTable .tableFootStyle .links {
+	 text-align: right;
+}
+.blueTable .tableFootStyle .links a{
+  display: inline-block;
+  background: royalblue;
+  color: #FFFFFF;
+  padding: 2px 8px;
+  border-radius: 5px;
+}
+.blueTable.outerTableFooter {
+  border-top: none;
+}
+.blueTable.outerTableFooter .tableFootStyle {
+  padding: 3px 5px; 
+}
+/* DivTable.com */
+.divTable{ display: table; }
+.divTableRow { display: table-row; }
+.divTableHeading { display: table-header-group;}
+.divTableCell, .divTableHead { display: table-cell;}
+.divTableHeading { display: table-header-group;}
+.divTableFoot { display: table-footer-group;}
+.divTableBody { display: table-row-group;}
+
 </style>
 

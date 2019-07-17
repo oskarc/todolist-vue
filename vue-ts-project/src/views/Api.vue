@@ -10,7 +10,7 @@
             <font-awesome-icon @click="createListMode = true" v-show="!createListMode" v-bind:class="{addList: 'addList'}" class="iconPlus" :icon="['fas', 'plus']"></font-awesome-icon> 
             <font-awesome-icon @click="createListMode = false" v-show="createListMode" v-bind:class="{cancelAddList: 'cancelAddList'}" class="iconPlus" :icon="['fas', 'check']"></font-awesome-icon>
         <div v-show="createListMode">
-            <p>Create</p>
+            <p>Skapa Ny Lista</p>
             <input type="text" placeholder="Ange Titel" @keypress.enter="createList($event.target.value)">
         </div>
       </div>
@@ -22,7 +22,7 @@
                 <div class="ListItemDiv">
                     <font-awesome-icon class="titleIcon" v-show="edit" type="radio" @click="delete1(List_present['id'])" :icon="['far', 'trash-alt']"></font-awesome-icon>
                     <h1 v-show="!triggerTitleEdit" @click="triggerTitleEdit = keepBool(edit)" class="listTitle">{{List_present['title']}}</h1>
-                        <input v-show="triggerTitleEdit && edit" :value="List_present['title']" type="text" @keyup.esc="triggerTitleEdit = false" @keypress.enter="triggerTitleEdit = false, EditListTitle(List_present, $event.target.value)">
+                        <input v-show="triggerTitleEdit && edit && showEditTitle()" :value="List_present['title']" ref="titleInput" type="text" @keyup.esc="triggerTitleEdit = false" @blur="triggerTitleEdit = false" @keypress.enter="triggerTitleEdit = false, EditListTitle(List_present, $event.target.value)">
                         <li @click="sortByCreatedDate()">Created</li>
                         <li @click="sortByDueDate()">Due</li>
                         <li @click="sortByCategory()">Category</li>
@@ -39,22 +39,24 @@
                                 <font-awesome-icon v-bind:class="{ 'competedIconDone': item['completed'], 'completedIcon': true}" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" :icon="['fas', 'check']"></font-awesome-icon>
                             </div>
                             <div class="div2">
-                                <p class="dueDate">Klart: {{item['dueDate'].replace('T', ' ')}}</p><span :class="item['priority']">{{item['priority']}}</span>
-                                <p v-show="edit && !hide" class="listItem" @click="triggerItemTextEdit = keepBool(edit), hide = changeBool(hide), focusElement(item['id'])" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
-                                <p v-show="!edit" class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
-                                <input placeholder="Ändra på sysslan här" :value="item['listItemText']" v-show="triggerItemTextEdit && edit" type="text" :ref="item['id']" class="editItem" name="editItem" id="editItem" @keyup.esc="triggerItemTextEdit = changeBool(triggerItemTextEdit), hide = changeBool(hide)" @keypress.enter="EditItemText(item, $event.target.value), triggerItemTextEdit = changeBool(triggerItemTextEdit), hide = changeBool(hide)"/>
-                                <p class="dateString">Skapad: {{item['created'].replace('T', ' ')}}</p>
-                                <select v-show="edit" class="editCategory" @change="ChangeCategoryForItem(item, $event.target.value)" name="dropdown" id="dropdown">
-                                    <option selected hidden value="empty">Kategorier</option>
-                                    <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
-                                </select>
-                                <select v-show="edit" class="" @change="EditItemPriority(item, $event.target.value)" name="dropdown" id="dropdown">
+                                <p      v-show="showDueDate !== item['id']"          @click="showDueDate = allowIfEditMode(item['id'])" class="dueDate">Klart: {{item['dueDate'].replace('T', ' ')}}</p>
+                                <input  v-show="edit && showDueDate === item['id']" @blur="showDueDate = 0"  @keypress.enter="EditItemDueDate(item, $event.target.value)" type="datetime-local" name="itemDueDate" id="itemDueDate">
+                                <span   v-show="showPriority !== item['id']"         @click="showPriority = allowIfEditMode(item['id'])" :class="item['priority']">{{item['priority']}}</span>
+                                <select v-show="edit && showPriority === item['id']" @blur="showPriority = 0" @change="EditItemPriority(item, $event.target.value)" name="dropdown" id="dropdown">
                                     <option selected hidden value="empty">Prioritet</option>
                                     <option value="Hög">Hög</option>
                                     <option value="Medel">Medel</option>
                                     <option value="Låg">Låg</option>
                                 </select>
-                                <input @keypress.enter="EditItemDueDate(item, $event.target.value)" v-show="edit" type="datetime-local" name="itemDueDate" id="itemDueDate">
+                                <span v-show="showCategory !== item['id']" @click="showCategory = allowIfEditMode(item['id'])" :class="item['category']"> {{item['category']}}</span>
+                                <select v-show="edit && showCategory === item['id']" @blur="showCategory = 0" class="editCategory" @change="ChangeCategoryForItem(item, $event.target.value)" :ref="item['id']" name="dropdown" id="dropdown">
+                                    <option selected hidden value="empty">Kategorier</option>
+                                    <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
+                                </select>
+                                <p v-show="edit && showItem !== item['id']" class="listItem" @click="triggerItemTextEdit = keepBool(edit), hide = changeBool(hide), showItem = item['id']" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <p v-show="!edit" class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category'])]">{{item['listItemText']}}</p>
+                                <input :value="item['listItemText']" v-show="edit && showItem === item['id'] && showEditItem(item['id'], 'input')" type="text" :ref="'input' + item['id']" class="editItem" name="editItem" id="editItem" @blur="showItem = 0" @keyup.esc="showItem = 0, hide = changeBool(hide)" @keypress.enter="EditItemText(item, $event.target.value), triggerItemTextEdit = changeBool(triggerItemTextEdit), hide = changeBool(hide)"/>
+                                <p class="dateString">Skapad: {{item['created'].replace('T', ' ')}}</p>
                             </div>
                         </div>
                         <div v-show="edit">
@@ -100,6 +102,10 @@ export default class Api extends Vue {
         this.getSettings();
         console.log("mounted!!");
     };
+        showDueDate = 0;
+        showPriority = 0;
+        showItem = 0;
+        showCategory = 0;
         hide = false;
         title = "";
         triggerTitleEdit = false;
@@ -145,7 +151,38 @@ export default class Api extends Vue {
         //     console.log(this.$refs[elementId])
         //     this.$refs[elementId].onFocus;
         // }
-        
+
+        allowIfEditMode(value: number) {
+            if(this.edit)
+                return value;
+            else
+                return 0;
+        }
+        showEditTitle() {
+            var self = this;
+             setTimeout(function () {
+                    (<HTMLInputElement>self.$refs.titleInput).focus();
+                    }, 1)
+                return true;
+        }
+
+        showEditItem(itemId: number, type: string) {
+            var ref = type + itemId.toString();
+            console.log(ref)
+            console.log(this.$refs[ref][0])
+            if(itemId === undefined || itemId === 0)
+                return false;
+                
+            if(this.showItem === itemId){
+                var self = this;
+                console.log(self.$refs[itemId])
+                setTimeout(function () {
+                    (<HTMLInputElement>self.$refs[ref][0]).focus();
+                    }, 1)
+                return true;
+            }
+        }
+
         changeBool(bool: boolean) {
             if(bool)
                 return false;
@@ -261,6 +298,7 @@ export default class Api extends Vue {
         sortByCategory() {
             if(this.sort === 1){
                 this.List_present.listItem.sort(function(a, b) {
+                    console.log(a.category, b.category)
                     if (a.category > b.category) 
                         return 1;
                     if (a.category < b.category) 
@@ -272,6 +310,7 @@ export default class Api extends Vue {
 
             if(this.sort === 2) {
                 this.List_present.listItem.sort(function(a, b) {
+                    console.log(a.category, b.category)
                     if ( a.category > b.category) 
                         return -1;
                     if (a.category < b.category) 
@@ -438,9 +477,9 @@ export default class Api extends Vue {
                             method: 'POST',
                             body: JSON.stringify(listitem),
                             headers: {'Content-Type': 'application/json'}}).then(function() {
-                                // self.get1();
                                 self.getUserList();
                             });
+                self.showItem = 0;
             }
 
         EditItemPriority(listitem: ListItem1, Priority: string){
@@ -454,6 +493,8 @@ export default class Api extends Vue {
                                 // self.get1();
                                 self.getUserList();
                             });
+
+                self.showPriority = 0;
             }
 
         EditItemDueDate(listitem: ListItem1, DueDate: string){
@@ -467,6 +508,8 @@ export default class Api extends Vue {
                                 // self.get1();
                                 self.getUserList();
                             });
+
+                self.showDueDate = 0;
             }
         EditListTitle(list: List1, title: string){
                 var self = this;
@@ -529,6 +572,8 @@ export default class Api extends Vue {
                 // self.get1();
                 self.getUserList();
               });
+
+              self.showCategory = 0;
           }
 
         // getAttempt() {
