@@ -38,6 +38,7 @@ export default Vue.extend({
 }
 #nav {
   padding: 30px;
+  text-align: center;
 }
 
 #nav a {

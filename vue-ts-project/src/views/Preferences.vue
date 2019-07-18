@@ -82,13 +82,13 @@
         </div>
         <div class="divTableBody">
             <div class="divTableRow" :key="item['Id']" v-for="item in categories">
-                <div  class="divTableCell">
+                <div  class="divTableCell vForCells">
                     <p  :id="item['id']" v-show="editTitle !== item['id']" @click="editTitle = item['id']" >{{item['category']}}</p>
-                    <input @blur="editTitle = 0" :value="item['category']" v-show="editTitle === item['id'] && show(item['id'])" @keyup.enter="Changecategory = item, ChangeCategoryTitle = $event.target.value, UpdateName()" @keyup.esc="editTitle = false" type="text" :ref="'input' + item['id']" :id="'input' + item['id']">
+                    <input @blur="changeCategory = item, ChangeCategoryTitle = $event.target.value, UpdateName()" :value="item['category']" v-show="editTitle === item['id'] && showInput(item['id'], 'input')" @keyup.enter="changeCategory = item, ChangeCategoryTitle = $event.target.value, UpdateName()" @keyup.esc="editTitle = false" type="text" :ref="'input' + item['id']" :id="'input' + item['id']">
                 </div>
-                <div class="divTableCell"  >
+                <div class="divTableCell vForCells"  >
                     <p v-show="edit !== item['id']" @click="edit = item['id'], expand(item['id'])" :ref="item['id']" :id="item['id']" :class="item['colorScheme']" >{{item['colorScheme']}}</p>
-                    <select @blur="edit = 0" v-show="edit === item['id']" class="select-css"  @change="Changecategory = item, ChangecolorScheme = $event.target.value, UpdateColor()" name="dropdown" :ref="'select' + item['id']" :id="'select' + item['id']">
+                    <select @blur="edit = 0" v-show="edit === item['id']" class="select-css" v-model="item['colorScheme']"  @change="changeCategory = item, ChangecolorScheme = $event.target.value, UpdateColor()" name="dropdown" :ref="'select' + item['id']" :id="'select' + item['id']">
                         <option value="colorscheme1">colorscheme 1</option>
                         <option value="colorscheme2">colorscheme 2</option>
                         <option value="colorscheme3">colorscheme 3</option>
@@ -101,10 +101,14 @@
                 </div>
             </div>
             <div class="divTableRow">
-                <div class="divTableCell">
+                <div class="divTableCell20">
                     <font-awesome-icon @click="newCategoryToggle = true" v-show="!newCategoryToggle"  class="iconPlus addCategory" :icon="['fas', 'plus']"></font-awesome-icon> 
                     <font-awesome-icon @click="newCategoryToggle = false" v-show="newCategoryToggle"  class="iconPlus cancelAddCategory" :icon="['fas', 'check']"></font-awesome-icon>
-                    <input v-show="newCategoryToggle" type="text" v-model="CategoryTitle" @keyup.enter="AddUserSetting($event.target.value)"/>
+                </div>
+                <div class="divTableCell80 addCategoryCell">
+                    <input v-show="newCategoryToggle && showInput('newCategory')" ref="newCategory" type="text" @blur="newCategoryToggle = false" v-model="CategoryTitle" @keyup.enter="AddUserSetting($event.target.value)"/>
+                </div>
+                <div class="divTableCell">
                 </div>
             </div>
         </div>
@@ -128,7 +132,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import state from 'vuex';
-import {List1, ListItem1, UserSettings} from '@/models/types';
+import {List1, ListItem1, UserSetting} from '@/models/types';
 import { library, config } from '@fortawesome/fontawesome-svg-core';
 import { faTimesCircle, faEdit, faCheck, faArrowUp, faArrowDown, faPlus} from "@fortawesome/free-solid-svg-icons";
 import { faTrashAlt,faCheckCircle} from "@fortawesome/free-regular-svg-icons";
@@ -151,32 +155,23 @@ export default class Preferences extends Vue {
         selected = "";
         CategoryTitle = "";
         categories = [];
-        Changecategory = [];
+        changeCategory = new UserSetting;
         ChangecolorScheme = "";
         selectedCategory = "";
         ChangeCategoryTitle = "";
         responseIfError = "";
        
-            // console.log("#2 " + this.$refs[input][0].id);
-            // document.getElementById(this.$refs[input][0].id).focus();
-
-        show(itemId: number) {
-            console.log(this.editTitle)
-            if(itemId === undefined || itemId === 0)
-                return false;
-            console.log(itemId)
-            var id = "input" + itemId;
-            console.log(this.$refs)
-            console.log(id)
-            console.log(this.$refs[id])
-            if(this.editTitle === itemId){
-                var self = this;
-                setTimeout(function () {
-                    (<HTMLInputElement>self.$refs[id][0]).focus();
+        showInput(ref: string, type = "") {
+            var self = this;
+            setTimeout(function () {
+                if(type !=="")
+                        (<HTMLInputElement>document.getElementById(type+ref)).focus();
+                    else
+                        (<HTMLInputElement>self.$refs[type+ref]).focus();
                     }, 1)
                 return true;
-            }
         }
+
        log(value: string) {
            console.log(value);
        }
@@ -211,7 +206,7 @@ export default class Preferences extends Vue {
             for (let index = 0; index < this.categories.length; index++){
                 if(this.categories[index]['category'] === event)
                 {
-                    this.Changecategory = this.categories[index];
+                    this.changeCategory = this.categories[index];
                 }
             }
         }
@@ -222,15 +217,19 @@ export default class Preferences extends Vue {
             for (let index = 0; index < this.categories.length; index++){
                 if(this.categories[index]['category'] === event)
                 {
-                    this.Changecategory = this.categories[index];
+                    this.changeCategory = this.categories[index];
                 }
             }
         }
 
         UpdateName() {
             var self = this;
-            self.Changecategory['category'] = self.ChangeCategoryTitle;
-            var bodyContent = self.Changecategory;
+            console.log("Hit!")
+            console.log(self.ChangeCategoryTitle)
+            console.log(self.changeCategory)
+            console.log("after hit!")
+            self.changeCategory.Category = self.ChangeCategoryTitle;
+            var bodyContent = self.changeCategory;
         
             fetch('https://localhost:44366/api/values/UpdateUserSetting/', {
                 method: 'POST',
@@ -240,13 +239,13 @@ export default class Preferences extends Vue {
                     self.getSettings();
                 });
 
-                self.editTitle = false;
+                self.editTitle = 0;
         }
 
         UpdateColor() {
             var self = this;
-            self.Changecategory['colorScheme'] = self.ChangecolorScheme;
-            var bodyContent = self.Changecategory;
+            self.changeCategory.ColorScheme = self.ChangecolorScheme;
+            var bodyContent = self.changeCategory;
         
             fetch('https://localhost:44366/api/values/UpdateUserSetting/', {
                 method: 'POST',
@@ -256,7 +255,7 @@ export default class Preferences extends Vue {
                     self.getSettings();
                 });
 
-                self.edit = false;
+                self.edit = 0;
         }
 
         getSettings() {
@@ -287,7 +286,7 @@ export default class Preferences extends Vue {
                 });
                 self.newCategoryToggle = false;
         }
-        DeleteUserSetting(item: UserSettings) {
+        DeleteUserSetting(item: UserSetting) {
             console.log(item)
             var self = this;
             item.UserId = self.$store.state.user['Id'];
@@ -314,10 +313,10 @@ export default class Preferences extends Vue {
 </script>
 
 <style scoped>
-font-awesome-icon {
+/* svg {
     display: flex;
     float: right;
-}
+} */
 .container {
     max-width: 40%;
     margin-left: 30%;
@@ -337,11 +336,11 @@ td {
     min-width: 50%;
 }
 
-.iconPlus{
+/* .iconPlus{
     font-size: 1.5em;
     display: inline;
     margin-right: 20px;
-}
+} */
 .addCategory{
     color: teal;
 }
@@ -508,20 +507,28 @@ body {
 .arrowIcon {
     font-size: 0.8em;
 }
+
 .colorscheme1 {
-    color: green;
+    color: #376ccd;
+    border: #376ccd 2px solid;
 }
 .colorscheme2 {
-    color: purple;
+    color: #7768ae;
+    border: #7768ae 2px solid;
 }
 .colorscheme3 {
-    color: yellow;
+    color: #3bb273;
+    border: #3bb273 2px solid;
 }
 .colorscheme4 {
-    color: orange;
+    color: #e1bc29;
+    border: #e1bc29 2px solid;
+
 }
 .colorscheme5 {
-    color: red;
+    color: #e15554;
+    border: #e15554 2px solid;
+
 }
 .dueDate {
     color:palegreen;
@@ -536,7 +543,7 @@ p {
     margin-left: 25%;
 }
 div.blueTable {
-  border: 1px solid royalblue;
+  border: 1px solid #376ccd;
   background-color: white;
   width: 100%;
   text-align: left;
@@ -550,13 +557,14 @@ div.blueTable {
   font-size: 13px;
 }
 .divTable.blueTable .divTableRow:nth-child(even) {
-  background: #D0E4F5;
+  background: rgb(214, 235, 255);
 }
 .divTable.blueTable .divTableHeading {
-  background: royalblue;
-  background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+    text-align: center;
+  background: #5080da;
+  /* background: -moz-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
   background: -webkit-linear-gradient(top, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
-  background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%);
+  background: linear-gradient(to bottom, #5592bb 0%, #327cad 66%, #1C6EA4 100%); */
   border-bottom: 2px solid #444444;
 }
 .divTable.blueTable .divTableHeading .divTableHead {
@@ -607,5 +615,33 @@ div.blueTable {
 .divTableFoot { display: table-footer-group;}
 .divTableBody { display: table-row-group;}
 
+.vForCells {
+    text-align: center;
+}
+.addCategoryCell svg {
+    /* margin-left: 20px; */
+    /* padding-left: 20px; */
+    font-size: 1.2em;
+    /* padding-right: 25px; */
+}
+.addCategoryCell input {
+    margin-left: 20px;
+    /* padding-left: 20px;  */
+    font-size: 1.2em;
+    /* padding-right: 25px; */
+}
+.divTableHead svg {
+    text-align: center;
+}
+.divTableCell20 {
+    /* min-width: 20%;
+    max-width: 20%; */
+    display: table-cell;
+}
+.divTableCell80{
+    /* min-width: 80%;
+    max-width: 80%; */
+    display: table-cell;
+}
 </style>
 

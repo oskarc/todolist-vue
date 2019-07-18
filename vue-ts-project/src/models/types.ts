@@ -15,6 +15,8 @@ export class ListItem1 {
     dueDate = "";
     priority = "";
     category = "";
+    categoryId = 0;
+    listId = 0;
 }
 
 export class User {
@@ -25,10 +27,10 @@ export class User {
     UserName = "";
 }
 
-export class UserSettings {
+export class UserSetting {
     id = 0;
     UserId = 0;
     Category = "";
-    ColorScheme = 0
+    ColorScheme = ""
     CategoryId = 0;
 }
