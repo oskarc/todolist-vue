@@ -52,7 +52,7 @@
                                 <span v-show="showCategory !== item['id']" @click="showCategory = allowIfEditMode(item['id'])" :class="[SetCategoryClassForItem(item['category']), 'span', {'hoverSettings': edit}]">{{item['category']}}</span>
                                 <select v-show="edit && showCategory === item['id'] && show(item['id'], 'dropDownCategory')" @blur="showCategory = 0" class="editCategory" @change="EditCategoryForItem(item, $event.target.value)" :ref="'dropDownCategory' + item['id']" name="dropdown" :id="'dropDownCategory' + item['id']">
                                     <option selected hidden value="empty">Kategorier</option>
-                                    <option v-for="obj in categories" :key="obj['id']" :value="obj['categoryId']">{{obj['category']}}</option>
+                                    <option :class="obj['colorScheme']" v-for="obj in categories" :key="obj['id']" :value="obj['categoryId']">{{obj['category']}}</option>
                                 </select>
                                 <p v-show="edit && showItem !== item['id']" class="listItem" @click="triggerItemTextEdit = keepBool(edit), hide = changeBool(hide), showItem = item['id']" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category']), 'listItemText', {'hoverSettings': edit}]">{{item['listItemText']}}</p>
                                 <p v-show="!edit" class="listItem" @click="item['completed'] = CompleteListItem(item['completed']), saveItem(item)" v-bind:class="[{ 'completed': item['completed']}, SetCategoryClassForItem(item['category']), 'listItemText']">{{item['listItemText']}}</p>
@@ -61,8 +61,8 @@
                             </div>
                         </div>
                         <div v-show="edit">
-                            <input @keypress.enter="AddItem($event.target.value), update = 1" class="addItem" placeholder="Skriv syssla eller sak"/>
-                            <select class="AddItemCategory" @change="category = $event.target.value" name="dropdown" id="dropdown">
+                            <input @keypress.enter="AddItem($event.target.value), update = 1"  v-model="newItem" class="addItem" placeholder="Skriv syssla eller sak"/>
+                            <!-- <select class="AddItemCategory" @change="category = $event.target.value" name="dropdown" id="dropdown">
                                 <option selected hidden value="empty">Kategorier</option>
                                 <option v-for="obj in categories" :key="obj['id']" :value="obj['category']">{{obj['category']}}</option>
                             </select>
@@ -72,7 +72,7 @@
                                 <option value="Medel">Medel</option>
                                 <option value="Låg">Låg</option>
                             </select>
-                            <input v-model="dueDate" type="datetime-local" name="dueDate" id="dueDate">
+                            <input v-model="dueDate" type="datetime-local" name="dueDate" id="dueDate"> -->
                         </div>
                     </li>
                 </ul>
@@ -103,6 +103,7 @@ export default class Api extends Vue {
         this.getSettings();
         console.log("mounted!!");
     };
+        newItem = "";
         showDueDate = 0;
         showPriority = 0;
         showItem = 0;
@@ -145,14 +146,6 @@ export default class Api extends Vue {
         emptyMethod() {
 
         }
-
-        // focusElement(elementId: string) {
-        //     console.log(elementId)
-        //     console.log(this.$refs)
-        //     console.log(this.$refs[elementId])
-        //     this.$refs[elementId].onFocus;
-        // }
-
         allowIfEditMode(value: number) {
             if(this.edit)
                 return value;
@@ -160,17 +153,7 @@ export default class Api extends Vue {
                 return 0;
         }
 
-        // showEditTitle() {
-        //     var self = this;
-        //      setTimeout(function () {
-        //             (<HTMLInputElement>self.$refs.titleInput).focus();
-        //             }, 1)
-        //         return true;
-        // }
-
         show(ref: string, type = "") {
-            console.log(this.$refs[type+ref])
-            console.log(<HTMLInputElement>document.getElementById(type+ref))
             var self = this;
             setTimeout(function () {
                 if(type !=="")
@@ -180,23 +163,6 @@ export default class Api extends Vue {
                     }, 1)
                 return true;
         }
-
-        // showEditItem(itemId: number, type: string) {
-        //     var ref = type + itemId.toString();
-        //     console.log(ref)
-        //     console.log(this.$refs[ref][0])
-        //     if(itemId === undefined || itemId === 0)
-        //         return false;
-                
-        //     if(this.showItem === itemId){
-        //         var self = this;
-        //         console.log(self.$refs[itemId])
-        //         setTimeout(function () {
-        //             (<HTMLInputElement>self.$refs[ref][0]).focus();
-        //             }, 1)
-        //         return true;
-        //     }
-        // }
 
         changeBool(bool: boolean) {
             if(bool)
@@ -396,9 +362,6 @@ export default class Api extends Vue {
                 var newList: any;
                 if(showLast)
                     self.List_present = myJson[myJson.length -1];
-                // else
-                //     self.List_present = undefined;
-
                 // @ts-ignore
                 myJson.forEach(element => {
                     if(element.id === self.List_present.id)
@@ -410,7 +373,6 @@ export default class Api extends Vue {
                         self.items = JSON.stringify(myJson, null, 2);
                         self.UserLists = myJson;
                         self.$store.state.z_string = myJson;
-                        // self.List_present = newList;
                         if(self.List_present !== undefined)
                             self.List_present.listItem.sort()
 
@@ -461,8 +423,6 @@ export default class Api extends Vue {
                 return response.json();
             })
             .then(function(myJson) {
-                console.log("here" + myJson)
-
                     self.List_present = myJson;
                     self.List_present.listItem.sort()
 
@@ -612,7 +572,8 @@ export default class Api extends Vue {
         AddItem(ListItemText: string) {
                 var self = this;
                 self.event = ListItemText;
-                var bodyContent = {ListId: self.List_present.listId, UserId: self.userid, ListItemText: ListItemText, dueDate: self.dueDate, category: self.category, Priority: self.Priority};
+                var bodyContent = {ListId: self.List_present.listId, UserId: self.$store.state.user['Id'], ListItemText: ListItemText, dueDate: self.dueDate, category: self.category, Priority: self.Priority};
+                console.log(bodyContent)
                 fetch('https://localhost:44366/api/values/AddItem/', {
                     method: 'POST',
                     body: JSON.stringify(bodyContent),
@@ -620,6 +581,7 @@ export default class Api extends Vue {
                     }).then(function(){   
                         self.firstrun = 0;
                          self.getUserList(self.List_present.listId);
+                         self.newItem = "";
                     });
           };
 
